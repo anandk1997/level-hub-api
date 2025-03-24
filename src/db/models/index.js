@@ -4,7 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
-const { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME } = require('../../../config');
+const {
+  DB_HOST,
+  DB_NAME,
+  DB_PASSWORD,
+  DB_USERNAME,
+  DB_PORT,
+} = require("../../../config");
 
 // /**
 //  * @type {Object.<string, import('sequelize').Model>}
@@ -32,8 +38,22 @@ const db = {};
  */
 const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
   host: DB_HOST,
-  dialect: 'postgres',
+  port: DB_PORT,
+  dialect: "postgres",
+
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+  logging: false,
 });
+
+sequelize
+  .authenticate()
+  .then(() => console.log("Database connected successfully"))
+  .catch((err) => console.error("Database connection error:", err));
 
 fs
   .readdirSync(__dirname)
