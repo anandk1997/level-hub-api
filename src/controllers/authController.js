@@ -216,9 +216,8 @@ const signin = async (req, res, next) => {
 			email: user.email,
 			role: user?.Role?.name
 		};
-		// return res.json({ userData, user, success: false, request });
 
-		const token = await Auth.authorize(userData, '7d');
+		const token = await Auth.authorize(userData, '1d');
 		return res.response(SIGNIN_SUCCESS, { user: userData, token });
 
 	} catch (error) {
