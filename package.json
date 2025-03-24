@@ -7,7 +7,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
-    "start:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js"
+    "start:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js",
+    "seed:generate": "sequelize-cli seed:generate --name seed-data",
+    "seed:apply": "sequelize-cli db:seed:all",
+    "db:create": "sequelize-cli db:create --config src/db/config/config.js",
+    "mg:status": "sequelize-cli db:migrate:status",
+    "mg:generate": "sequelize-cli migration:generate --name init --config src/db/config/config.js --migrations-path src/db/migrations",
+    "mg:migrate": "sequelize-cli db:migrate --config src/db/config/config.js --migrations-path src/db/migrations",
+    "mg:undo": "sequelize-cli db:migrate:undo --config src/db/config/config.js --migrations-path src/db/migrations",
+    "mg:undoall": "sequelize-cli db:migrate:undo:all --config src/db/config/config.js --migrations-path src/db/migrations"
   },
   "keywords": [],
   "author": "Kanishk Gupta",
@@ -30,6 +38,7 @@
     "sequelize": "^6.37.6"
   },
   "devDependencies": {
+    "nodemon": "^3.1.9",
     "sequelize-cli": "^6.6.2"
   }
 }
