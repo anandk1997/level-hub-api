@@ -24,12 +24,14 @@ module.exports = (sequelize, DataTypes) => {
 		levelXP: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-      defaultValue: 1000
+      defaultValue: 1000,
+      comment: "The amount of Experience Points (XP) required to level up"
 		},
 		currentXP: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      comment: "The current XP of the user"
 		},
   }, {
     timestamps: true,

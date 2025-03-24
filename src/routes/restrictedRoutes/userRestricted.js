@@ -15,6 +15,10 @@ router.use(auth.checkToken);
 // LEVEL
 router.post("/level", levelValidation.levelXPValidation, levelCtrl.saveLevelXP);
 
+// ACTIVITIES
+router.route("/activities")
+  .post(levelValidation.levelXPValidation, levelCtrl.saveLevelXP);
+
 // APPLICATIONS
 // router.route('/application').post(applicationFilesUploader, applCtrl.save_application);
 // router.post('/applications', applValidation.userApplicationListing, applCtrl.get_user_applications);
