@@ -10,20 +10,37 @@ const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
  * @typedef {import('sequelize').Sequelize} Sequelize
  */
 module.exports = (sequelize, DataTypes) => {
-  class Activities extends Model {
+  class ActivityHistory extends Model {
     static associate(models) {
-      Activities.belongsTo(models.Users, {
+      ActivityHistory.belongsTo(models.Activities, {
+        foreignKey: 'activityId',
+        onDelete: 'CASCADE', // Delete level when the user is deleted,
+      });
+      ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'assigneeId',
         onDelete: 'CASCADE', // Delete level when the user is deleted,
         as: "assignee" 
       });
-      Activities.belongsTo(models.Users, {
+      ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'assignedById',
         as: "assignedBy"
       });
+      ActivityHistory.belongsTo(models.Users, {
+        foreignKey: 'approvedById',
+        as: "approvedBy"
+      });
     }
   }
-  Activities.init({
+  ActivityHistory.init({
+    activityId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'activities',
+        key: "id",        
+      },
+      onDelete: "CASCADE",
+    },  
     title: {
       type: DataTypes.STRING,
 			allowNull: false,
@@ -45,17 +62,6 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 0,
       comment: 'Experience Points'
     },
-    isRecurring: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    },
-    assignedDays: {
-      type: DataTypes.ARRAY(
-        DataTypes.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
-      ),
-      allowNull: false,
-    },
     assigneeId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
@@ -72,12 +78,32 @@ module.exports = (sequelize, DataTypes) => {
         model: "users",
         key: "id",
       },
+    },    
+    approvalDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    approvalDay: {
+      type: DataTypes.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY),
+      allowNull: false
+    },
+    approvedByName: {
+      type: DataTypes.STRING, // Name of the person who approved the completion
+      allowNull: false,
+    },
+    approvedById: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "users",
+        key: "id",
+      },
     },
   }, {
     timestamps: true,
     sequelize,
-    modelName: 'Activities',
-    tableName: 'activities',
+    modelName: 'ActivityHistory',
+    tableName: 'activityHistory',
   });
-  return Activities;
+  return ActivityHistory;
 };

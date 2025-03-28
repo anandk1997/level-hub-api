@@ -12,12 +12,6 @@ const {
   DB_PORT,
 } = require("../../../config");
 
-// /**
-//  * @type {Object.<string, import('sequelize').Model>}
-//  * @property {Sequelize.Sequelize} sequelize - Sequelize instance
-//  * @property {typeof Sequelize} Sequelize - Sequelize library
-//  * @property {Users} Users - Users model
-//  */
 
 /**
  * @typedef {Object} DBModels
@@ -28,6 +22,7 @@ const {
  * @property {UserOtps} UserOtps - UserOTPs model
  * @property {UserConfig} UserConfig - UserConfig model
  * @property {Levels} Levels - Levels model
+ * @property {Activities} Activities - Activities model
  */
 
 /** @type {DBModels} */
@@ -47,10 +42,10 @@ const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
   },
 });
 
-sequelize
+/* sequelize
   .authenticate()
   .then(() => console.log("Database connected successfully"))
-  .catch((err) => console.error("Database connection error:", err));
+  .catch((err) => console.error("Database connection error:", err)); */
 
 fs
   .readdirSync(__dirname)
