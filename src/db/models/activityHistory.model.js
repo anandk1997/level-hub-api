@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       ActivityHistory.belongsTo(models.Activities, {
         foreignKey: 'activityId',
-        onDelete: 'CASCADE', // Delete level when the user is deleted,
       });
       ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'assigneeId',
@@ -39,8 +38,7 @@ module.exports = (sequelize, DataTypes) => {
         model: 'activities',
         key: "id",        
       },
-      onDelete: "CASCADE",
-    },  
+    },
     title: {
       type: DataTypes.STRING,
 			allowNull: false,
@@ -78,7 +76,7 @@ module.exports = (sequelize, DataTypes) => {
         model: "users",
         key: "id",
       },
-    },    
+    },
     approvalDate: {
       type: DataTypes.DATE,
       allowNull: false

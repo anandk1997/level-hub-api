@@ -3,8 +3,8 @@
 const { Router } = require("express");
 const router = Router();
 
-const { levelCtrl } = require("../../controllers");
-const { levelValidation } = require("../../validations");
+const { levelCtrl, actCtrl } = require("../../controllers");
+const { levelValidation, activityValidation } = require("../../validations");
 const { auth } = require('../../middlewares');
 
 // const applicationFilesUploader = require("../middlewares/applicationFilesUploader");
@@ -17,7 +17,7 @@ router.post("/level", levelValidation.levelXPValidation, levelCtrl.saveLevelXP);
 
 // ACTIVITIES
 router.route("/activities")
-  .post(levelValidation.levelXPValidation, levelCtrl.saveLevelXP);
+  .post(activityValidation.saveActivityValidation , actCtrl.createActivity);
 
 // APPLICATIONS
 // router.route('/application').post(applicationFilesUploader, applCtrl.save_application);

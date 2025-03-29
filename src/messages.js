@@ -32,5 +32,5 @@ module.exports = {
     INVALID_TOKEN: 'Access denied. Invalid token.',
     INVALID_TOKEN_EXCEPTION: 'InvalidTokenException',
     ACCESS_DENIED: 'Access denied. No token provided.',
-    LEVEL_SET_SUCCESS: 'Level XP set successfully.',
+    LEVEL_SAVED_SUCCESS: 'Level XP saved successfully.',
 }

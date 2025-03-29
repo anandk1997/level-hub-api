@@ -1,14 +1,25 @@
 'use strict';
+const { DAYS } = require('../../constants');
+const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('activities', {
+    await queryInterface.createTable('activityHistory', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false
+      },
+      activityId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'activities',
+          key: "id",
+        },
+        onDelete: "CASCADE",
       },
       title: {
         type: Sequelize.STRING,
@@ -21,6 +32,9 @@ module.exports = {
       videoLink: {
         type: Sequelize.STRING,
         allowNull: true,
+        validate: {
+          isUrl: true
+        }
       },
       xp: {
         type: Sequelize.INTEGER,
@@ -55,6 +69,26 @@ module.exports = {
           key: "id",
         },
       },
+      approvalDate: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      approvalDay: {
+        type: Sequelize.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY),
+        allowNull: false
+      },
+      approvedByName: {
+        type: Sequelize.STRING, // Name of the person who approved the completion
+        allowNull: false,
+      },
+      approvedById: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -64,7 +98,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
-      }
+      },
     });
   },
 
