@@ -1,29 +1,57 @@
 'user strict';
 
-const Joi = require('joi').extend(require('@joi/date'));
-// const { ErrorHandler } = require('../helpers');
-const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
+const Joi = require('joi');
+const joiDate = require('@joi/date');
+const { DAYS } = require('../constants');
+const { VALIDATION_ERROR_EXCEPTION, ACT_END_DATE_MIN_VALIDATION, ACT_END_DATE_MAX_VALIDATION, ACT_START_DATE_MIN_VALIDATION, ACT_START_DATE_MAX_VALIDATION } = require('../messages');
+const dayjs = require('dayjs');
 
+const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
+const joiExtended = Joi.extend(joiDate);
 
 /**
- * Sign Up user schema validation
+ * Save activity schema validation
  * 
- * @param {Object} req
- * @param {Object} res
- * @param {Function} next
+ * @async
+ * @function saveActivityValidation
+ * @param {Object} req - The Express request object.
+ * @param {Object} res - The Express response object.
+ * @param {Function} next - The next middleware function in the stack.
+ * 
+ * @throws {Error} Returns a 400 response with a validation error message if validation fails.
  */
 const saveActivityValidation = async (req, res, next) => {
+  const currentDate = dayjs().startOf('day').toDate();
+  const maxStartDate = dayjs().startOf('day').add(1, 'year').toDate();
+  const maxEndDate = dayjs(req.body.startDate).startOf('day').add(1, 'year').toDate();
+
 	const schema = Joi.object({
-		firstName: Joi.string().min(1).max(128).required(),
-		lastName: Joi.string().max(128).allow('').optional(),
-		email: Joi.string().max(128).email({ minDomainSegments: 2 }).required(),
-		phone: Joi.string().max(20).optional(),
-		password: Joi.string().min(8).max(128).required(),
-		gender: Joi.string().valid('male', 'female', 'others').optional(),
-		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
-		category: Joi.string().optional(),
-		type: Joi.string().valid('gym', 'coach', 'parent', 'individual').required(),
-		organizationName: Joi.string().max(256).optional(),
+    activityId: Joi.number().integer().optional(),
+		title: Joi.string().min(1).max(256).required(),
+		description: Joi.string().optional(),
+		videoLink: Joi.string().max(256).optional(),
+    xp: Joi.number().min(1).max(10000).integer().required().strict(),
+		isRecurring: Joi.boolean().required(),
+		assignedDays: Joi.array().items(
+      Joi.string().valid(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
+    ).unique().when('isRecurring', {
+      is: true,
+      then: Joi.array().min(1).required(),
+      otherwise: Joi.forbidden()
+    }),
+    startDate: joiExtended.date().format('YYYY-MM-DD').raw().required().min(currentDate).max(maxStartDate).messages({
+      'date.min': ACT_START_DATE_MIN_VALIDATION,
+      'date.max': ACT_START_DATE_MAX_VALIDATION
+    }),
+    endDate: joiExtended.date().format('YYYY-MM-DD').raw().min(Joi.ref('startDate')).max(maxEndDate).when('isRecurring', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }).messages({
+      'date.min': ACT_END_DATE_MIN_VALIDATION,
+      'date.max': ACT_END_DATE_MAX_VALIDATION
+    }),
+    isSelfAssignment: Joi.boolean().required()
 	});
 	try {
 		await schema.validateAsync(req.body);
@@ -32,121 +60,6 @@ const saveActivityValidation = async (req, res, next) => {
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
 };
-
-/**
- * Middleware to validate the OTP verification request.
- *
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware function
- */
-const verifyOtpValidation = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.alternatives().try(
-			Joi.string().email({ minDomainSegments: 2 }),
-			// Joi.string().pattern(/^[0-9]+$/),
-		).required(),
-		otp: Joi.string().length(6).required(),
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
-
-/**
- * Middleware to vresent registration verification OTP
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
- */
-const resendOtp = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.alternatives().try(
-			Joi.string().email({ minDomainSegments: 2 }),
-			// Joi.string().pattern(/^[0-9]+$/),
-		).required()
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
-
-/**
- * Sign In user schema validation
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
- */
-const signinValidation = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.string().email({ minDomainSegments: 2 }).required(),
-		password: Joi.string().min(8).max(128).required(),
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
-
-/**
- * Reset password schema validation
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
- */
-const resetPasswordValidation = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.string().email({ minDomainSegments: 2 }).required(),
-		password: Joi.string().min(8).max(128).required().label('Password'),
-		confirmPassword: Joi.string().valid(Joi.ref('password')).required()
-					.label('Confirm Password').options({
-						messages: { 'any.only': '{{#label}} does not match' }
-					}),
-		otp: Joi.string().required(),
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
-
-/**
- * Change password schema validation
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
- */
-const changePasswordValidation = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.string().email({ minDomainSegments: 2 }).required(),
-		password: Joi.string().min(8).max(128).required().label('Password'),
-		confirmPassword: Joi.string().valid(Joi.ref('password')).required()
-				.label('Confirm Password').options({
-					messages: { 'any.only': '{{#label}} does not match' }
-				}),
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
-
 
 module.exports = {
 	saveActivityValidation,

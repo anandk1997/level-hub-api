@@ -41,8 +41,16 @@ module.exports = {
         type: Sequelize.ARRAY(
           Sequelize.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
         ),
+        allowNull: true,
+      },
+      startDate: {
+        type: Sequelize.DATEONLY,
         allowNull: false,
-      },      
+      },
+      endDate: {
+        type: Sequelize.DATEONLY,
+        allowNull: false,
+      },
       assigneeId: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -68,6 +76,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
+      },
+      deletedAt: {
+        allowNull: true,
+        type: Sequelize.DATE,
       }
     });
   },

@@ -109,10 +109,10 @@ const resetPasswordValidation = async (req, res, next) => {
 	const schema = Joi.object({
 		email: Joi.string().email({ minDomainSegments: 2 }).required(),
 		password: Joi.string().min(8).max(128).required().label('Password'),
-		confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+		/* confirmPassword: Joi.string().valid(Joi.ref('password')).required()
 					.label('Confirm Password').options({
 						messages: { 'any.only': '{{#label}} does not match' }
-					}),
+					}), */
 		otp: Joi.string().required(),
 	});
 	try {

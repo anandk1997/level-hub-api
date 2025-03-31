@@ -54,6 +54,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ARRAY(
         DataTypes.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
       ),
+      allowNull: true,
+    },
+    startDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    endDate: {
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     assigneeId: {

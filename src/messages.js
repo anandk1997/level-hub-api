@@ -33,4 +33,10 @@ module.exports = {
     INVALID_TOKEN_EXCEPTION: 'InvalidTokenException',
     ACCESS_DENIED: 'Access denied. No token provided.',
     LEVEL_SAVED_SUCCESS: 'Level XP saved successfully.',
+    ACTIVITY_CREATED_SUCCESS: 'Activity created successfully.',
+    ACTIVITY_UPDATED_SUCCESS: 'Activity updated successfully.',
+    ACT_START_DATE_MIN_VALIDATION: "Start date must be today or later",
+    ACT_START_DATE_MAX_VALIDATION: "Start date cannot be more than one year from today",
+    ACT_END_DATE_MIN_VALIDATION: "End date must be greater than start date",
+    ACT_END_DATE_MAX_VALIDATION: "End date must be within one year from start date",
 }

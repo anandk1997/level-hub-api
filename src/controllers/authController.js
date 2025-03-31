@@ -326,7 +326,7 @@ const verifyResetOtp = async (req, res, next) => {
  */
 const resetPassword = async (req, res, next) => {
 	try {
-		const { email, otp, password, confirmPassword } = req.body;
+		const { email, otp, password } = req.body;
 
 		const user = await db.Users.findOne({
 			attributes: ['id', 'email', 'firstName', 'lastName'],

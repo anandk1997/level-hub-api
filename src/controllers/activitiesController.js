@@ -9,10 +9,11 @@ const { userHelper } = require('../helpers');
 const {
 	USER_DOESNT_EXISTS,
 	USER_DOESNT_EXISTS_EXCEPTION,
-  LEVEL_SAVED_SUCCESS: LEVEL_SET_SUCCESS
+  ACTIVITY_CREATED_SUCCESS,
+  ACTIVITY_UPDATED_SUCCESS,
 } = require('../messages.js');
 
-const { fetchPrimaryUser } = userHelper;
+const { fetchUser } = userHelper;
 const { Op } = db.Sequelize;
 
 /**
@@ -23,19 +24,37 @@ const { Op } = db.Sequelize;
  * @param {Function} next 
  */
 const createActivity  = async (req, res, next) => {
-  const request = req.body;
-  return res.json({ request, email: req.email, username: req.username, role: req.role });
+  const {
+    activityId,
+    title,
+    description,
+    videoLink,
+    xp,
+    isRecurring,
+    assignedDays,
+    startDate,
+    endDate,
+    isSelfAssignment
+  } = req.body;
   try {
-    const user = await fetchPrimaryUser(req.email, null, ['id', 'email']);
-
+    const user = await fetchUser(req.email, null, ['id', 'email']);
     if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
+    // return res.json({ user, request: req.body, email: req.email, username: req.username, role: req.role });
 
-    const result = await db.Levels.create({
-      userId: user.id,
-      levelXP,
-      currentXP: 0
+    const result = await db.Activities.upsert({
+      id: activityId,
+      title,
+      description,
+      videoLink,
+      xp,
+      isRecurring,
+      assignedDays: isRecurring ? assignedDays : null,
+      startDate,
+      endDate: isRecurring ? endDate : startDate,
+      assigneeId: user?.id,
+      assignedById: isSelfAssignment ? user?.id : user?.id,
     });
-    return res.response(LEVEL_SET_SUCCESS, result);
+    return res.response(activityId ? ACTIVITY_UPDATED_SUCCESS : ACTIVITY_CREATED_SUCCESS);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
