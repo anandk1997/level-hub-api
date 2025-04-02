@@ -61,6 +61,31 @@ const saveActivityValidation = async (req, res, next) => {
 	}
 };
 
+/**
+ * Fetch Activities schema validation
+ * 
+ * @async
+ * @function fetchActivitiesValidation
+ * @param {import('express').Request} req 
+ * @param {Object} res 
+ * @param {Function} next 
+ */
+const fetchActivitiesValidation = async (req, res, next) => {
+  const schema = Joi.object({
+    startDate: joiExtended.date().format('YYYY-MM-DD').raw().optional(),
+    endDate: joiExtended.date().format('YYYY-MM-DD').raw().optional().min(Joi.ref('startDate')),
+    status: Joi.string().valid('active', 'inactive').optional(),
+  });
+  try {
+    await schema.validateAsync(req.query);
+    next();
+  } catch (error) {
+    return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+  }
+};
+
+
 module.exports = {
 	saveActivityValidation,
+  fetchActivitiesValidation,
 };

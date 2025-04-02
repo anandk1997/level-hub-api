@@ -6,8 +6,14 @@ const { DAYS } = require('../../constants');
 const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
 
 /**
+ * Activities Model Defination
+ * 
  * @typedef {import('sequelize').Model} Model
  * @typedef {import('sequelize').Sequelize} Sequelize
+ *
+ * @param {import('sequelize').Sequelize} sequelize - Sequelize instance
+ * @param {import('sequelize').DataTypes} DataTypes - Sequelize DataTypes
+ * @returns {import('sequelize').Model} - Activities model
  */
 module.exports = (sequelize, DataTypes) => {
   class Activities extends Model {

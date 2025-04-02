@@ -13,11 +13,14 @@ router.use(auth.checkToken);
 
 
 // LEVEL
-router.post("/level", levelValidation.levelXPValidation, levelCtrl.saveLevelXP);
+router.route("/level")
+  .post(levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
+  .get(levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
 router.route("/activities")
-  .post(activityValidation.saveActivityValidation , actCtrl.createActivity);
+  .post(activityValidation.saveActivityValidation , actCtrl.createActivity)
+  .get(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 
 // APPLICATIONS
 // router.route('/application').post(applicationFilesUploader, applCtrl.save_application);

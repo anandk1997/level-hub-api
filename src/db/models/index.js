@@ -12,6 +12,15 @@ const {
   DB_PORT,
 } = require("../../../config");
 
+/**
+ * @typedef {import('sequelize').Model} Levels
+ * @typedef {import('sequelize').Model} Users
+ * @typedef {import('sequelize').Model} Roles
+ * @typedef {import('sequelize').Model} UserOtps
+ * @typedef {import('sequelize').Model} UserConfig
+ * @typedef {import('sequelize').Model} Activities
+*/
+
 
 /**
  * @typedef {Object} DBModels

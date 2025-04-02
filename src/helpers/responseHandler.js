@@ -3,9 +3,9 @@
 /**
  * Common response handler middleware
  * 
- * @param {object} req 
- * @param {object} res 
- * @param {function} next 
+ * @param {import('express').Request} req
+ * @param {import('./types').ExtendedResponse} res
+ * @param {Function} next 
  */
 const responseHandler = (req, res, next) => {
   /**

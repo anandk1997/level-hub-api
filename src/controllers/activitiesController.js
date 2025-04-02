@@ -1,5 +1,6 @@
 'use strict';
 
+const dayjs = require('dayjs');
 const { 
   COMMON_ERR_MSG,
 } = require('../../config.js');
@@ -11,17 +12,18 @@ const {
 	USER_DOESNT_EXISTS_EXCEPTION,
   ACTIVITY_CREATED_SUCCESS,
   ACTIVITY_UPDATED_SUCCESS,
+  ACTIVITY_FETCH_SUCCESS,
 } = require('../messages.js');
 
 const { fetchUser } = userHelper;
 const { Op } = db.Sequelize;
 
 /**
- * Sign Up user
+ * Create or update an activity
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const createActivity  = async (req, res, next) => {
   const {
@@ -60,6 +62,37 @@ const createActivity  = async (req, res, next) => {
   }
 };
 
+/**
+ * Fetch activities listing
+ * 
+ * @async
+ * @function fetchActivities
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchActivities = async (req, res, next) => {
+  const { status } = req.query;
+
+  try {
+    let where = {};
+    if (status) {
+      const currentDate = dayjs().format("YYYY-MM-DD");
+      where = {
+        ...where,
+        startDate: { [Op.lte]: currentDate },
+        endDate: { [Op.gte]: currentDate }
+      };
+    }
+    
+    const { count, rows } = await db.Activities.findAndCountAll({ where });
+    return res.response(ACTIVITY_FETCH_SUCCESS, { count, rows });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 module.exports = {
   createActivity,
+  fetchActivities,
 }

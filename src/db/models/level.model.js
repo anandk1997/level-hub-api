@@ -2,6 +2,16 @@
 
 const { Model } = require('sequelize');
 
+/**
+ * Level Model Defination
+ * 
+ * @typedef {import('sequelize').Model} Model
+ * @typedef {import('sequelize').Sequelize} Sequelize
+ * 
+ * @param {import('sequelize').Sequelize} sequelize - Sequelize instance
+ * @param {import('sequelize').DataTypes} DataTypes - Sequelize DataTypes
+ * @returns {import('sequelize').Model} - Levels model
+ */
 module.exports = (sequelize, DataTypes) => {
   class Levels extends Model {
     static associate(models) {
