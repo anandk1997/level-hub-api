@@ -11,12 +11,12 @@ const joiExtended = Joi.extend(joiDate);
 
 /**
  * Save activity schema validation
- * 
+ *
  * @async
  * @function saveActivityValidation
- * @param {Object} req - The Express request object.
- * @param {Object} res - The Express response object.
- * @param {Function} next - The next middleware function in the stack.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  * 
  * @throws {Error} Returns a 400 response with a validation error message if validation fails.
  */
@@ -37,7 +37,7 @@ const saveActivityValidation = async (req, res, next) => {
     ).unique().when('isRecurring', {
       is: true,
       then: Joi.array().min(1).required(),
-      otherwise: Joi.forbidden()
+      otherwise: Joi.forbidden(),
     }),
     startDate: joiExtended.date().format('YYYY-MM-DD').raw().required().min(currentDate).max(maxStartDate).messages({
       'date.min': ACT_START_DATE_MIN_VALIDATION,
@@ -63,12 +63,12 @@ const saveActivityValidation = async (req, res, next) => {
 
 /**
  * Fetch Activities schema validation
- * 
+ *
  * @async
  * @function fetchActivitiesValidation
- * @param {import('express').Request} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const fetchActivitiesValidation = async (req, res, next) => {
   const schema = Joi.object({
@@ -84,8 +84,28 @@ const fetchActivitiesValidation = async (req, res, next) => {
   }
 };
 
+/**
+ * Approve activity schema validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const approveActivityValidation = async (req, res, next) => {
+  const schema = Joi.object({
+    remarks: Joi.string().max(255).optional(),
+  });
+  try {
+    await schema.validateAsync(req.query);
+    next();
+  } catch (error) {
+    return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+  }
+};
+
 
 module.exports = {
 	saveActivityValidation,
   fetchActivitiesValidation,
+  approveActivityValidation,
 };

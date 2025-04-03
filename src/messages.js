@@ -39,7 +39,12 @@ module.exports = {
     ACT_START_DATE_MAX_VALIDATION: "Start date cannot be more than one year from today",
     ACT_END_DATE_MIN_VALIDATION: "End date must be greater than start date",
     ACT_END_DATE_MAX_VALIDATION: "End date must be within one year from start date",
-    ACTIVITY_FETCH_SUCCESS: 'Activity fetched successfully.',
+    ACTIVITY_LIST_FETCH_SUCCESS: 'Activity list fetched successfully.',
+    ACTIVITY_FETCH_SUCCESS: 'Activity deatils fetched successfully.',
     LEVEL_NOT_SET: 'Your target level is not set. Please set your target XP level to get most benefits of LevelHub.',
     LEVEL_FETCH_SUCCESS: 'Level information fetched successfully.',
+    ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
+    ACTIVITY_DOESNT_EXISTS_EXCEPTION: 'ActivityDoesNotExistException',
+    ACTIVITY_APPROVED_SUCCESS: 'Activity marked as completed.',
+
 }

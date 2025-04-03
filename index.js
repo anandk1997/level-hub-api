@@ -26,7 +26,7 @@ function main() {
 
 
     // Handle unknown routes
-    app.all("*", (req, res, next) => {
+    app.all("/*splat", (req, res, next) => {
         next(new ErrorHandler(`Can't find ${req.originalUrl} on this server!`, 404));
     });
 

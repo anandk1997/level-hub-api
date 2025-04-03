@@ -18,9 +18,13 @@ router.route("/level")
   .get(levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
-router.route("/activities")
+router.route("/activity")
   .post(activityValidation.saveActivityValidation , actCtrl.createActivity)
   .get(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+router.route("/activity/:id")
+  .get(actCtrl.fetchActivityDetails);
+router.route("/activity/approve/:id")
+  .put(activityValidation.approveActivityValidation, actCtrl.approveActivity);
 
 // APPLICATIONS
 // router.route('/application').post(applicationFilesUploader, applCtrl.save_application);
