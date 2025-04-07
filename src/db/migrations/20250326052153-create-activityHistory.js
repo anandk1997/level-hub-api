@@ -42,17 +42,6 @@ module.exports = {
         defaultValue: 0,
         comment: 'Experience Points'
       },
-      isRecurring: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
-      assignedDays: {
-        type: Sequelize.ARRAY(
-          Sequelize.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
-        ),
-        allowNull: false,
-      },      
       assigneeId: {
         type: Sequelize.INTEGER,
         allowNull: false,

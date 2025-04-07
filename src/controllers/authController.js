@@ -211,7 +211,7 @@ const signin = async (req, res, next) => {
 		if (!user.UserConfig.isVerified) { return res.response(ACCOUNT_NOT_VERIFIED, {}, 403, ACCOUNT_NOT_VERIFIED_EXCEPTION, false); }
 
 		const userData = {
-			id: user._id,
+			id: user.id,
 			fullName: `${user.firstName} ${user.lastName}`.trim(),
 			email: user.email,
 			role: user?.Role?.name

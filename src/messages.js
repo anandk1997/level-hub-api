@@ -46,5 +46,7 @@ module.exports = {
     ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
     ACTIVITY_DOESNT_EXISTS_EXCEPTION: 'ActivityDoesNotExistException',
     ACTIVITY_APPROVED_SUCCESS: 'Activity marked as completed.',
+    ACTIVITY_APPROVAL_EXISTS: 'Activity already marked as completed.',
+    ACTIVITY_HISTORY_EXISTS_EXCEPTION: 'ActivityHistoryExistsException',
 
 }

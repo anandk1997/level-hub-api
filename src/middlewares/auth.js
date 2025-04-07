@@ -27,6 +27,7 @@ const checkToken = (req, res, next) => {
 					return res.response(INVALID_TOKEN, {}, 401, INVALID_TOKEN_EXCEPTION, false);
 				} else {
 					req.accessToken = token;
+					req.userId = decoded.id;
 					req.email = decoded.email;
 					req.username = decoded.username;
 					req.role = decoded.role;
