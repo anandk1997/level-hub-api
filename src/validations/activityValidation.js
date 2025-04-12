@@ -93,10 +93,11 @@ const fetchActivitiesValidation = async (req, res, next) => {
  */
 const approveActivityValidation = async (req, res, next) => {
   const schema = Joi.object({
+    activityIds: Joi.array().items(Joi.number().integer()).min(1).required(),
     remarks: Joi.string().max(255).optional(),
   });
   try {
-    await schema.validateAsync(req.query);
+    await schema.validateAsync(req.body);
     next();
   } catch (error) {
     return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);

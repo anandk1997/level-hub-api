@@ -62,10 +62,6 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false
       },
-      approvalDay: {
-        type: Sequelize.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY),
-        allowNull: false
-      },
       approvedByName: {
         type: Sequelize.STRING, // Name of the person who approved the completion
         allowNull: false,

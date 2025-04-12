@@ -44,9 +44,11 @@ module.exports = {
     LEVEL_NOT_SET: 'Your target level is not set. Please set your target XP level to get most benefits of LevelHub.',
     LEVEL_FETCH_SUCCESS: 'Level information fetched successfully.',
     ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
+    ACTIVITIES_DOESNT_EXISTS: "Some activity doesn't exist!",
     ACTIVITY_DOESNT_EXISTS_EXCEPTION: 'ActivityDoesNotExistException',
     ACTIVITY_APPROVED_SUCCESS: 'Activity marked as completed.',
     ACTIVITY_APPROVAL_EXISTS: 'Activity already marked as completed.',
     ACTIVITY_HISTORY_EXISTS_EXCEPTION: 'ActivityHistoryExistsException',
-
+    ACTIVITY_ASSIGNEE_MISMATCH: "You can't approved activities of multiple users at once.",
+    ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION: "ActivityAssigneeMismatchException",
 }
