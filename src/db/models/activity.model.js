@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'assignedById',
         as: "assignedBy"
       });
+      Activities.hasMany(models.ActivityHistory, {
+        foreignKey: 'activityId',
+        as: "activityHistory"
+      });
     }
   }
   Activities.init({

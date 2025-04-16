@@ -19,8 +19,9 @@ router.route("/level")
 
 // ACTIVITIES
 router.route("/activity")
-  .post(activityValidation.saveActivityValidation , actCtrl.createActivity)
-  .get(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(activityValidation.saveActivityValidation, actCtrl.createActivity);
+router.route("/activity/list")
+  .post(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
   .put(activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")

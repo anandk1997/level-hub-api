@@ -43,7 +43,7 @@ const createActivity  = async (req, res, next) => {
     startDate,
     endDate,
     isSelfAssignment
-  } = req.body;
+  } = req?.body;
   try {
     const user = await fetchUser(req.email, null, ['id', 'email']);
     if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 400, USER_DOESNT_EXISTS_EXCEPTION, false); }
@@ -78,20 +78,54 @@ const createActivity  = async (req, res, next) => {
  * @param {import('express').NextFunction} next
  */
 const fetchActivities = async (req, res, next) => {
-  const { status } = req.query;
-
+  
   try {
-    let where = {};
-    if (status) {
-      const currentDate = dayjs().format("YYYY-MM-DD");
-      where = {
-        ...where,
-        startDate: { [Op.lte]: currentDate },
-        endDate: { [Op.gte]: currentDate }
-      };
-    }
+    let { startDate, endDate, page = 1, pageSize = 10 } = req.body;
+    const userId = parseInt(req.userId)
+    const pageOffset = pageSize * (page - 1);
+    startDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+    endDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+
+    const whereClause = {
+      startDate: { [Op.lte]: startDate },
+      endDate: { [Op.gte]: endDate },
+      assigneeId: userId,
+    };
+    // return res.json({ body: req.body, startDate, endDate, page, pageOffset, where });
     
-    const { count, rows } = await db.Activities.findAndCountAll({ where });
+    const { count, rows } = await db.Activities.findAndCountAll({
+      where: whereClause,
+      include: {
+        model: db.ActivityHistory,
+        as: 'activityHistory',
+        required: false,
+        on: {
+          [Op.and]: [
+            where(col('activityHistory.activityId'), '=', col('Activities.id')),
+            where(col('activityHistory.assigneeId'), '=', userId),
+            literal(`DATE("activityHistory"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'`)
+          ]
+        },      
+        attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById']
+      },
+      /* include: {
+        model: db.ActivityHistory,
+        as: 'activityHistory',
+        required: false,
+        where: {
+          [Op.and]: [
+            where(fn('DATE', col('activityHistory.approvalDate')), {
+              [Op.between]: [startDate, endDate],
+            }),
+            { assigneeId: userId },
+          ],
+        },
+        attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById']
+      }, */
+      limit: pageSize,
+      offset: pageOffset,
+      order: [['id', 'DESC']],
+    });
     return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, rows });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
@@ -132,6 +166,7 @@ const checkIfActivityIsActive = async (activityIds, attributes) => {
       [Op.and]: literal(`
         CASE
           WHEN "isRecurring" = true THEN '${currentDay}' = ANY("assignedDays")
+          ELSE "assignedDays" IS NULL
         END  
       `)
     }
