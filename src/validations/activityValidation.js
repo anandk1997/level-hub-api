@@ -77,7 +77,7 @@ const fetchActivitiesValidation = async (req, res, next) => {
   const schema = Joi.object({
     startDate: joiExtended.date().format('YYYY-MM-DD').raw().optional(),
     endDate: joiExtended.date().format('YYYY-MM-DD').raw().optional().min(Joi.ref('startDate')),
-    status: Joi.string().valid('completed', 'notCompleted').optional(),
+    status: Joi.string().valid('completed', 'notCompleted', 'all').optional(),
     assigneeId: Joi.string().optional(),
     page: Joi.number().integer().strict().min(1).optional(),
     pageSize: Joi.number().integer().strict().min(0).max(100).optional(),

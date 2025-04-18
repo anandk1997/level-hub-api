@@ -80,34 +80,51 @@ const createActivity  = async (req, res, next) => {
 const fetchActivities = async (req, res, next) => {
   
   try {
-    let { startDate, endDate, page = 1, pageSize = 10 } = req.body;
+    let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
     const userId = parseInt(req.userId)
     const pageOffset = pageSize * (page - 1);
-    startDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
-    endDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+    startDate = startDate ? dayjs(startDate).startOf('date').format("YYYY-MM-DD HH:mm:ss") : dayjs().startOf('date').format("YYYY-MM-DD HH:mm:ss");
+    endDate = endDate ? dayjs(endDate).endOf('date').format("YYYY-MM-DD") : dayjs().endOf('date').format("YYYY-MM-DD HH:mm:ss");
 
-    const whereClause = {
+    let whereClause = {
       startDate: { [Op.lte]: startDate },
       endDate: { [Op.gte]: endDate },
       assigneeId: userId,
     };
-    // return res.json({ body: req.body, startDate, endDate, page, pageOffset, where });
+    // return res.json({ havingClause, body: req.body, startDate, endDate, page, pageOffset, where });
+
+    let includeClause = {
+      model: db.ActivityHistory,
+      as: 'activityHistory',
+      required: false,
+      attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById'],
+      on: {
+        [Op.and]: [
+          where(col('activityHistory.activityId'), '=', col('Activities.id')),
+          where(col('activityHistory.assigneeId'), '=', userId),
+          literal(`DATE("activityHistory"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'`)
+        ]
+      },
+    };
+
+    if (status === 'completed') {
+      includeClause.required = true;
+    } else if (status === 'notCompleted') {
+      whereClause[Op.and] = [
+        ...(whereClause[Op.and] || []),
+        literal(`NOT EXISTS (
+          SELECT 1 FROM "activityHistory" AS "ah" 
+          WHERE "ah"."activityId" = "Activities"."id"
+          AND "ah"."assigneeId" = ${userId}
+          AND DATE("ah"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'
+        )`)
+      ];
+    }
+
     
     const { count, rows } = await db.Activities.findAndCountAll({
       where: whereClause,
-      include: {
-        model: db.ActivityHistory,
-        as: 'activityHistory',
-        required: false,
-        on: {
-          [Op.and]: [
-            where(col('activityHistory.activityId'), '=', col('Activities.id')),
-            where(col('activityHistory.assigneeId'), '=', userId),
-            literal(`DATE("activityHistory"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'`)
-          ]
-        },      
-        attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById']
-      },
+      include: includeClause,
       /* include: {
         model: db.ActivityHistory,
         as: 'activityHistory',
@@ -125,7 +142,13 @@ const fetchActivities = async (req, res, next) => {
       limit: pageSize,
       offset: pageOffset,
       order: [['id', 'DESC']],
+      distinct: true
     });
+    const activities = rows.map(activity => ({
+      ...activity.dataValues,
+      activityHistory: activity?.activityHistory?.length ? activity?.activityHistory[0]: [],
+      completed: !!activity?.activityHistory?.length
+    }));
     return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, rows });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });

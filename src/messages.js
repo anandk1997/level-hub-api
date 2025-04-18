@@ -46,7 +46,7 @@ module.exports = {
     ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
     ACTIVITIES_DOESNT_EXISTS: "Some activities aren't assigned for today or don't exist!",
     ACTIVITY_DOESNT_EXISTS_EXCEPTION: 'ActivityDoesNotExistException',
-    ACTIVITY_APPROVED_SUCCESS: 'Activity marked as completed.',
+    ACTIVITY_APPROVED_SUCCESS: 'Activities marked as completed.',
     ACTIVITY_APPROVAL_EXISTS: 'Activity already marked as completed.',
     ACTIVITY_HISTORY_EXISTS_EXCEPTION: 'ActivityHistoryExistsException',
     ACTIVITY_ASSIGNEE_MISMATCH: "You can't approved activities of multiple users at once.",
