@@ -68,7 +68,7 @@ const signup = async (req, res, next) => {
       lastName: request.lastName.trim(),
       email: request.email.trim(),
       phone: request.phone.trim(),
-      gender: request.gender.trim(),
+      gender: request?.gender?.trim(),
       password,
       dob: request.dob,
       category: request.category,
