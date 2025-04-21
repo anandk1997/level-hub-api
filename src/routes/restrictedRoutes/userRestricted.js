@@ -3,8 +3,18 @@
 const { Router } = require("express");
 const router = Router();
 
-const { levelCtrl, actCtrl } = require("../../controllers");
-const { levelValidation, activityValidation } = require("../../validations");
+const {
+  levelCtrl,
+  actCtrl,
+  reportCtrl,
+  dashCtrl
+} = require("../../controllers");
+const {
+  levelValidation,
+  activityValidation,
+  dashValidation,
+  reportsValidation
+} = require("../../validations");
 const { auth } = require('../../middlewares');
 
 // const applicationFilesUploader = require("../middlewares/applicationFilesUploader");
@@ -27,16 +37,12 @@ router.route("/activity/approve")
 router.route("/activity/:id")
   .get(actCtrl.fetchActivityDetails);
 
-// APPLICATIONS
-// router.route('/application').post(applicationFilesUploader, applCtrl.save_application);
-// router.post('/applications', applValidation.userApplicationListing, applCtrl.get_user_applications);
-// router.get('/applications/:id', applCtrl.get_application_details);
-// PROFILE
-// router.route('/profile')
-// 	.get(userCtrl.get_user_profile)
-// 	.put(userValidation.updateProfileValidation, userCtrl.update_user_profile);
-// router.put("/profile/update_password", userValidation.updatePasswordValidation, userCtrl.update_user_password);
 
-// router.get('/states', stateCtrl.get_all_states);
+// REPORTS
+router.get("/report/activity", reportsValidation.generateReportValidation, reportCtrl.generateReport);
+
+
+// DASHBOARD
+router.get("/dashboard/monthly", dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
 
 module.exports = router;

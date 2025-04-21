@@ -51,4 +51,5 @@ module.exports = {
     ACTIVITY_HISTORY_EXISTS_EXCEPTION: 'ActivityHistoryExistsException',
     ACTIVITY_ASSIGNEE_MISMATCH: "You can't approved activities of multiple users at once.",
     ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION: "ActivityAssigneeMismatchException",
+    ACTIVITY_GRAPH_FETCH_SUCCESS: 'Activity information fetched successfully.',
 }

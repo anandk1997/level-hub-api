@@ -149,7 +149,7 @@ const fetchActivities = async (req, res, next) => {
       activityHistory: activity?.activityHistory?.length ? activity?.activityHistory[0]: [],
       completed: !!activity?.activityHistory?.length
     }));
-    return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, rows });
+    return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, activities });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
