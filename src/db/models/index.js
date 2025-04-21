@@ -20,6 +20,7 @@ const {
  * @typedef {import('sequelize').Model} UserConfig
  * @typedef {import('sequelize').Model} Activities
  * @typedef {import('sequelize').Model} ActivityHistory
+ * @typedef {import('sequelize').Model} ActivityTemplates
 */
 
 
@@ -34,6 +35,7 @@ const {
  * @property {Levels} Levels - Levels model
  * @property {Activities} Activities - Activities model
  * @property {ActivityHistory} ActivityHistory - Activities model
+ * @property {ActivityTemplates} ActivityTemplates - Activities model
  */
 
 /** @type {DBModels} */

@@ -3,6 +3,7 @@ const levelCtrl = require('./levelController');
 const actCtrl = require('./activitiesController');
 const reportCtrl = require('./reportsController');
 const dashCtrl = require('./dashboardController');
+const templateCtrl = require('./activityTemplateController');
 
 module.exports = {
   authCtrl,
@@ -10,4 +11,5 @@ module.exports = {
   actCtrl,
   reportCtrl,
   dashCtrl,
+  templateCtrl,
 };

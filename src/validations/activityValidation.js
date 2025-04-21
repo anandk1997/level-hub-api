@@ -54,12 +54,9 @@ const saveActivityValidation = async (req, res, next) => {
     isSelfAssignment: Joi.boolean().required()
 	});
 	try {
-    console.log("req.body : ", req.body);
-		const a = await schema.validateAsync(req.body);
-    console.log("HERE : ", a);
+		const a = await schema.val
 		next();
 	} catch (error) {
-    console.log("ERROR : ", error)
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
 };
@@ -80,7 +77,7 @@ const fetchActivitiesValidation = async (req, res, next) => {
     status: Joi.string().valid('completed', 'notCompleted', 'all').optional(),
     assigneeId: Joi.string().optional(),
     page: Joi.number().integer().strict().min(1).optional(),
-    pageSize: Joi.number().integer().strict().min(0).max(100).optional(),
+    pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
   });
   try {
     await schema.validateAsync(req.body);

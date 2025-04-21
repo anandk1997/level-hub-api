@@ -40,7 +40,7 @@ module.exports = {
     ACT_END_DATE_MIN_VALIDATION: "End date must be greater than start date",
     ACT_END_DATE_MAX_VALIDATION: "End date must be within one year from start date",
     ACTIVITY_LIST_FETCH_SUCCESS: 'Activity list fetched successfully.',
-    ACTIVITY_FETCH_SUCCESS: 'Activity deatils fetched successfully.',
+    ACTIVITY_FETCH_SUCCESS: 'Activity details fetched successfully.',
     LEVEL_NOT_SET: 'Your target level is not set. Please set your target XP level to get most benefits of LevelHub.',
     LEVEL_FETCH_SUCCESS: 'Level information fetched successfully.',
     ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
@@ -52,4 +52,9 @@ module.exports = {
     ACTIVITY_ASSIGNEE_MISMATCH: "You can't approved activities of multiple users at once.",
     ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION: "ActivityAssigneeMismatchException",
     ACTIVITY_GRAPH_FETCH_SUCCESS: 'Activity information fetched successfully.',
+    ACTIVITY_TEMPLATE_CREATED_SUCCESS: 'Activity template created successfully.',
+    ACTIVITY_TEMPLATE_UPDATED_SUCCESS: 'Activity template updated successfully.',
+    ACTIVITY_TEMPLATES_FETCH_SUCCESS: 'Activity template list fetched successfully.',
+    ACTIVITY_TEMPLATE_DETAIL_FETCH_SUCCESS: 'Activity template details fetched successfully.',
+    ACTIVITY_TEMPLATE_DELETED_SUCCESS: 'Activity template deleted successfully.',
 }

@@ -7,13 +7,15 @@ const {
   levelCtrl,
   actCtrl,
   reportCtrl,
-  dashCtrl
+  dashCtrl,
+  templateCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
   activityValidation,
   dashValidation,
-  reportsValidation
+  reportsValidation,
+  templateValidation,
 } = require("../../validations");
 const { auth } = require('../../middlewares');
 
@@ -37,6 +39,13 @@ router.route("/activity/approve")
 router.route("/activity/:id")
   .get(actCtrl.fetchActivityDetails);
 
+// ACTIVITY TEMPLATE
+router.route("/template")
+  .get(templateValidation.fetchTemplatesValidation, templateCtrl.fetchActivityTemplates)
+  .post(templateValidation.saveTemplateValidation, templateCtrl.saveActivityTemplate);
+router.route("/template/:id")
+  .get(templateCtrl.fetchActivityTemplateDetails)
+  .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
 router.get("/report/activity", reportsValidation.generateReportValidation, reportCtrl.generateReport);
