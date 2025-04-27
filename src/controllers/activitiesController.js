@@ -19,6 +19,7 @@ const {
   ACTIVITIES_DOESNT_EXISTS,
   ACTIVITY_ASSIGNEE_MISMATCH,
   ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION,
+  ACTIVITY_DELETED_SUCCESS,
 } = require('../messages.js');
 
 const { fetchUser } = userHelper;
@@ -68,6 +69,7 @@ const createActivity  = async (req, res, next) => {
   }
 };
 
+
 /**
  * Fetch activities listing
  *
@@ -83,15 +85,17 @@ const fetchActivities = async (req, res, next) => {
     let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
     const userId = parseInt(req.userId)
     const pageOffset = pageSize * (page - 1);
-    startDate = startDate ? dayjs(startDate).startOf('date').format("YYYY-MM-DD HH:mm:ss") : dayjs().startOf('date').format("YYYY-MM-DD HH:mm:ss");
-    endDate = endDate ? dayjs(endDate).endOf('date').format("YYYY-MM-DD") : dayjs().endOf('date').format("YYYY-MM-DD HH:mm:ss");
+    const filterStartDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+    const filterEndDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
 
     let whereClause = {
-      startDate: { [Op.lte]: startDate },
-      endDate: { [Op.gte]: endDate },
       assigneeId: userId,
+      [Op.and]: [
+        { startDate: { [Op.lte]: filterEndDate } },
+        { endDate:   { [Op.gte]: filterStartDate } },
+      ],
+
     };
-    // return res.json({ havingClause, body: req.body, startDate, endDate, page, pageOffset, where });
 
     let includeClause = {
       model: db.ActivityHistory,
@@ -102,7 +106,7 @@ const fetchActivities = async (req, res, next) => {
         [Op.and]: [
           where(col('activityHistory.activityId'), '=', col('Activities.id')),
           where(col('activityHistory.assigneeId'), '=', userId),
-          literal(`DATE("activityHistory"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'`)
+          literal(`DATE("activityHistory"."approvalDate") BETWEEN '${filterStartDate}' AND '${filterEndDate}'`)
         ]
       },
     };
@@ -110,39 +114,18 @@ const fetchActivities = async (req, res, next) => {
     if (status === 'completed') {
       includeClause.required = true;
     } else if (status === 'notCompleted') {
-      whereClause[Op.and] = [
-        ...(whereClause[Op.and] || []),
-        literal(`NOT EXISTS (
-          SELECT 1 FROM "activityHistory" AS "ah" 
-          WHERE "ah"."activityId" = "Activities"."id"
-          AND "ah"."assigneeId" = ${userId}
-          AND DATE("ah"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'
-        )`)
-      ];
+      includeClause.required = false;
+      whereClause['$activityHistory.id$'] = null;
     }
-
     
     const { count, rows } = await db.Activities.findAndCountAll({
       where: whereClause,
       include: includeClause,
-      /* include: {
-        model: db.ActivityHistory,
-        as: 'activityHistory',
-        required: false,
-        where: {
-          [Op.and]: [
-            where(fn('DATE', col('activityHistory.approvalDate')), {
-              [Op.between]: [startDate, endDate],
-            }),
-            { assigneeId: userId },
-          ],
-        },
-        attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById']
-      }, */
       limit: pageSize,
       offset: pageOffset,
       order: [['id', 'DESC']],
-      distinct: true
+      distinct: true,
+      subQuery: false
     });
     const activities = rows.map(activity => ({
       ...activity.dataValues,
@@ -154,6 +137,7 @@ const fetchActivities = async (req, res, next) => {
     return next({ error, statusCode: 500, message: error?.message });
   }
 };
+
 
 /**
  * Fetch activity details
@@ -213,7 +197,6 @@ const checkIfActivityIsApproved = async (activityIds) => {
   });
 };
 
-
 /**
  * Approve an activity
  *
@@ -266,9 +249,27 @@ const approveActivity = async (req, res, next) => {
   }
 };
 
+/**
+ * Delete an activity
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const deleteActvity = async (req, res, next) => {
+  try {
+    const activityId = parseInt(req.params.id);
+    const result = await db.Activities.destroy({ where: { id: activityId } })
+    return res.response(ACTIVITY_DELETED_SUCCESS, result);
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 module.exports = {
   createActivity,
   fetchActivities,
   approveActivity,
   fetchActivityDetails,
+  deleteActvity,
 }

@@ -57,4 +57,6 @@ module.exports = {
     ACTIVITY_TEMPLATES_FETCH_SUCCESS: 'Activity template list fetched successfully.',
     ACTIVITY_TEMPLATE_DETAIL_FETCH_SUCCESS: 'Activity template details fetched successfully.',
     ACTIVITY_TEMPLATE_DELETED_SUCCESS: 'Activity template deleted successfully.',
+    ACTIVITY_DELETED_SUCCESS: 'Activity deleted successfully.',
+    REPORT_FETCH_SUCCESS: 'Montly activity report fetched successfully.',
 }

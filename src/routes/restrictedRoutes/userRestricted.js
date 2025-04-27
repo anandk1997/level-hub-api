@@ -37,7 +37,8 @@ router.route("/activity/list")
 router.route("/activity/approve")
   .put(activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
-  .get(actCtrl.fetchActivityDetails);
+  .get(actCtrl.fetchActivityDetails)
+  .delete(actCtrl.deleteActvity);
 
 // ACTIVITY TEMPLATE
 router.route("/template")
@@ -48,7 +49,7 @@ router.route("/template/:id")
   .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
-router.get("/report/activity", reportsValidation.generateReportValidation, reportCtrl.generateReport);
+router.get("/report/activity", reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
 
 
 // DASHBOARD

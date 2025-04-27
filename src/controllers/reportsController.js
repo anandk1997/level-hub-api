@@ -3,116 +3,91 @@
 const dayjs = require('dayjs');
 
 const { db } = require('../db');
-const { userHelper } = require('../helpers');
-const {
-	USER_DOESNT_EXISTS,
-	USER_DOESNT_EXISTS_EXCEPTION,
-  ACTIVITY_CREATED_SUCCESS,
-  ACTIVITY_UPDATED_SUCCESS,
-  ACTIVITY_FETCH_SUCCESS,
-  ACTIVITY_LIST_FETCH_SUCCESS,
-  ACTIVITY_DOESNT_EXISTS,
-  ACTIVITY_DOESNT_EXISTS_EXCEPTION,
-  ACTIVITY_APPROVED_SUCCESS,
-  ACTIVITY_APPROVAL_EXISTS,
-  ACTIVITY_HISTORY_EXISTS_EXCEPTION,
-  ACTIVITIES_DOESNT_EXISTS,
-  ACTIVITY_ASSIGNEE_MISMATCH,
-  ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION,
-} = require('../messages');
+// const { userHelper } = require('../helpers');
+const { REPORT_FETCH_SUCCESS } = require('../messages');
 
-const { fetchUser } = userHelper;
-const { Op, fn, col, where, literal } = db.Sequelize;
+const { QueryTypes } = db.Sequelize;
+
 
 
 /**
- * Fetch activities reports for a month
- *
- * @async
- * @function fetchActivities
+ * Get a “target vs achieved” report for a given month
+ * 
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
- */
-const generateReport = async (req, res, next) => {
-  
+*/
+const getMonthlyActivityReport = async (req, res, next) => {
   try {
-    return res.json({ query: req.query });
-    let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
-    const userId = parseInt(req.userId)
-    const pageOffset = pageSize * (page - 1);
-    startDate = startDate ? dayjs(startDate).startOf('date').format("YYYY-MM-DD HH:mm:ss") : dayjs().startOf('date').format("YYYY-MM-DD HH:mm:ss");
-    endDate = endDate ? dayjs(endDate).endOf('date').format("YYYY-MM-DD") : dayjs().endOf('date').format("YYYY-MM-DD HH:mm:ss");
+    const userId = parseInt(req.userId), reportMonth = req.query.date;
+    const startDate = reportMonth ? dayjs(reportMonth).startOf('month').format("YYYY-MM-DD") : dayjs().startOf('month').format("YYYY-MM-DD");
+    let endDate = reportMonth ? dayjs(reportMonth).endOf('month').format("YYYY-MM-DD") : dayjs().endOf('month').format("YYYY-MM-DD");
 
-    let whereClause = {
-      startDate: { [Op.lte]: startDate },
-      endDate: { [Op.gte]: endDate },
-      assigneeId: userId,
-    };
-    // return res.json({ havingClause, body: req.body, startDate, endDate, page, pageOffset, where });
-
-    let includeClause = {
-      model: db.ActivityHistory,
-      as: 'activityHistory',
-      required: false,
-      attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById'],
-      on: {
-        [Op.and]: [
-          where(col('activityHistory.activityId'), '=', col('Activities.id')),
-          where(col('activityHistory.assigneeId'), '=', userId),
-          literal(`DATE("activityHistory"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'`)
-        ]
-      },
-    };
-
-    if (status === 'completed') {
-      includeClause.required = true;
-    } else if (status === 'notCompleted') {
-      whereClause[Op.and] = [
-        ...(whereClause[Op.and] || []),
-        literal(`NOT EXISTS (
-          SELECT 1 FROM "activityHistory" AS "ah" 
-          WHERE "ah"."activityId" = "Activities"."id"
-          AND "ah"."assigneeId" = ${userId}
-          AND DATE("ah"."approvalDate") BETWEEN '${startDate}' AND '${endDate}'
-        )`)
-      ];
+    if (dayjs().isBefore(dayjs(endDate))) {
+      endDate = dayjs().format("YYYY-MM-DD");
     }
 
-    
-    const { count, rows } = await db.Activities.findAndCountAll({
-      where: whereClause,
-      include: includeClause,
-      /* include: {
-        model: db.ActivityHistory,
-        as: 'activityHistory',
-        required: false,
-        where: {
-          [Op.and]: [
-            where(fn('DATE', col('activityHistory.approvalDate')), {
-              [Op.between]: [startDate, endDate],
-            }),
-            { assigneeId: userId },
-          ],
-        },
-        attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById']
-      }, */
-      limit: pageSize,
-      offset: pageOffset,
-      order: [['id', 'DESC']],
-      distinct: true
+    const sqlQuery = `
+      SELECT
+        gs.day::date AS date,
+        COALESCE(a.assigned_count,   0) AS total_assigned,
+        COALESCE(a.assigned_xp,      0) AS total_assigned_xp,
+        COALESCE(c.completed_count,  0) AS total_completed,
+        COALESCE(c.completed_xp,     0) AS total_completed_xp
+      FROM
+        generate_series(
+          :startDate::date,
+          :endDate::date,
+          interval '1 day'
+        ) AS gs(day)
+      
+      -- Assigned on that day, only if within the date window AND matches recurring rules
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*) AS assigned_count,
+          SUM(xp)   AS assigned_xp
+        FROM activities act
+        WHERE
+          act."assigneeId" = :userId
+          AND act."startDate" <= gs.day
+          AND act."endDate"   >= gs.day
+          AND (
+            act."isRecurring" = FALSE
+            OR (
+              act."isRecurring" = TRUE
+              AND lower(to_char(gs.day, 'FMDay')) = ANY(act."assignedDays"::text[])
+            )
+          )
+      ) AS a ON TRUE
+
+      -- Completed on that day
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*)       AS completed_count,
+          SUM(act.xp)    AS completed_xp
+        FROM "activityHistory" ah
+        JOIN activities act
+          ON act.id = ah."activityId"
+        WHERE
+          ah."assigneeId" = :userId
+          AND DATE(ah."approvalDate") = gs.day
+      ) AS c ON TRUE
+
+      ORDER BY gs.day;
+    `;
+
+    const report = await db.sequelize.query(sqlQuery, {
+      replacements: { userId, startDate, endDate },
+      type: QueryTypes.SELECT,
     });
-    const activities = rows.map(activity => ({
-      ...activity.dataValues,
-      activityHistory: activity?.activityHistory?.length ? activity?.activityHistory[0]: [],
-      completed: !!activity?.activityHistory?.length
-    }));
-    return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, activities });
+
+    return res.response(REPORT_FETCH_SUCCESS, { report });
+
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
-};
+}
 
 module.exports = {
-  generateReport
+  getMonthlyActivityReport,
 }

@@ -1,9 +1,7 @@
 'use strict';
 
 const { Model } = require('sequelize');
-const { DAYS } = require('../../constants');
 
-const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
 
 /**
  * Activity History Model Defination
