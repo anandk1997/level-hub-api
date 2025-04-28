@@ -48,9 +48,20 @@ const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
   host: DB_HOST,
   port: DB_PORT,
   dialect: "postgres",
-  // logging: false,
+  /* dialectOptions: {
+    useUTC: false,
+    dateStrings: true,
+    timezone: '+00:00',
+    typeCast: function (field, next) {
+      if (field.type === 'DATETIME') {
+        return field.string()
+      }
+      return next()
+    },
+  }, */
+  logging: process.env.NODE_ENV === 'development',
   ssl: {
-    require: process.NODE_ENV !== 'development' ? true : false,
+    require: process.env.NODE_ENV !== 'development' ? true : false,
     rejectUnauthorized: false,
   },
 });

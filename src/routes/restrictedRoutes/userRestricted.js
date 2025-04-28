@@ -54,5 +54,7 @@ router.get("/report/activity", reportsValidation.generateReportValidation, repor
 
 // DASHBOARD
 router.get("/dashboard/monthly", dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
+router.get("/dashboard/all", dashCtrl.fetchAllTimeActivities);
+router.get("/dashboard/today", dashCtrl.fetchTodaysActivities);
 
 module.exports = router;

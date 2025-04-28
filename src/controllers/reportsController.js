@@ -9,7 +9,6 @@ const { REPORT_FETCH_SUCCESS } = require('../messages');
 const { QueryTypes } = db.Sequelize;
 
 
-
 /**
  * Get a “target vs achieved” report for a given month
  * 
@@ -82,7 +81,6 @@ const getMonthlyActivityReport = async (req, res, next) => {
     });
 
     return res.response(REPORT_FETCH_SUCCESS, { report });
-
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }

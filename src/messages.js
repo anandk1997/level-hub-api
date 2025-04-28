@@ -59,4 +59,6 @@ module.exports = {
     ACTIVITY_TEMPLATE_DELETED_SUCCESS: 'Activity template deleted successfully.',
     ACTIVITY_DELETED_SUCCESS: 'Activity deleted successfully.',
     REPORT_FETCH_SUCCESS: 'Montly activity report fetched successfully.',
+    DASH_ALL_STATS_FETCH_SUCCESS: 'All time activity stats fetched successfully.',
+    DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
 }

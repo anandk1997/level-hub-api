@@ -14,7 +14,7 @@ const joiExtended = Joi.extend(joiDate);
  * Fetch Monthly Activity Reports schema validation
  *
  * @async
- * @function generateReportValidation
+ * @function monthlyActivityHistValidation
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
