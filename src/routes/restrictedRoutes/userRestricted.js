@@ -9,6 +9,7 @@ const {
   reportCtrl,
   dashCtrl,
   templateCtrl,
+  userCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
@@ -16,6 +17,7 @@ const {
   dashValidation,
   reportsValidation,
   templateValidation,
+  userValidation,
 } = require("../../validations");
 const { auth } = require('../../middlewares');
 
@@ -56,5 +58,11 @@ router.get("/report/activity", reportsValidation.generateReportValidation, repor
 router.get("/dashboard/monthly", dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
 router.get("/dashboard/all", dashCtrl.fetchAllTimeActivities);
 router.get("/dashboard/today", dashCtrl.fetchTodaysActivities);
+
+// USERS
+router.put("/password/change", userValidation.changePasswordValidation, userCtrl.changePassword);
+router.route("/profile")
+  .get(userCtrl.fetchUserProfile)
+  .put(userValidation.updateProfileValidation, userCtrl.updateUserProfile);
 
 module.exports = router;

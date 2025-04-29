@@ -42,9 +42,9 @@ const { Op } = db.Sequelize;
 /**
  * Sign Up user
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const signup = async (req, res, next) => {
   const request = req.body;
@@ -65,9 +65,9 @@ const signup = async (req, res, next) => {
 
     const user = {
       firstName: request.firstName.trim(),
-      lastName: request.lastName.trim(),
+      lastName: request.lastName ? request.lastName.trim() : null,
       email: request.email.trim(),
-      phone: request.phone.trim(),
+      phone: request?.phone?.trim(),
       gender: request?.gender?.trim(),
       password,
       dob: request.dob,
@@ -102,9 +102,9 @@ const saveOTP = async (userId, otpType) => {
 /**
  * Verify user registration OTP
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const verifyRegistrationOtp = async (req, res, next) => {
 	const request = req.body;
@@ -146,9 +146,9 @@ const verifyRegistrationOtp = async (req, res, next) => {
 /**
  * Resend user registration OTP
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const resendRegistrationOtp = async (req, res, next) => {
 	const { email } = req.body;
@@ -172,9 +172,9 @@ const resendRegistrationOtp = async (req, res, next) => {
 /**
  * Validate user credentials
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const signin = async (req, res, next) => {
 	const request = req.body;
@@ -225,40 +225,13 @@ const signin = async (req, res, next) => {
 	}
 };
 
-/**
- * API to change user password
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {function} next 
- */
-const changePassword = async (req, res, next) => {1
-	try {
-		const request = req.body, tutorId = req.userId;
-		const { email, otp, password } = req.body;
-		return res.json({ email, otp, password });
-		const user = await Tutors.findById(tutorId).select('_id password').lean().exec();
-		if (!user?._id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
-
-		let valid = await compareSync(request.oldPassword, user.password);
-		if (!valid) {
-			return res.response(INCORRECT_PASS, {}, 401, INCORRECT_PASS_EXCEPTION, false);
-		}
-		const passHash = await hashSync(request.newPassword, saltRounds);
-
-		await Tutors.updateOne({ _id: tutorId }, { password }).exec();
-		return res.response(PASSWORD_UPDATE_SUCCESS);
-	} catch (error) {
-		return next({ error, statusCode: 500, message: error?.message });
-	}
-};
 
 /**
  * Generate and send OTP on forgot password
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const forgotPassword = async (req, res, next) => {
 	const { email } = req.body;
@@ -281,9 +254,9 @@ const forgotPassword = async (req, res, next) => {
 /**
  * API to verify reset password OTP
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const verifyResetOtp = async (req, res, next) => {
 	try {
@@ -320,9 +293,9 @@ const verifyResetOtp = async (req, res, next) => {
 /**
  * API to reset user password
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const resetPassword = async (req, res, next) => {
 	try {
@@ -588,6 +561,5 @@ module.exports = {
 	resendRegistrationOtp,
 	forgotPassword,
 	resetPassword,
-	changePassword,
 	verifyResetOtp,
 }

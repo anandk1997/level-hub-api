@@ -4,6 +4,7 @@ const activityValidation = require('./activityValidation');
 const dashValidation = require('./dashboardValidation');
 const reportsValidation = require('./reportsValidation');
 const templateValidation = require('./activityTemplateValidation');
+const userValidation = require('./userValidation');
 
 module.exports = {
   authValidation,
@@ -12,4 +13,5 @@ module.exports = {
   dashValidation,
   reportsValidation,
   templateValidation,
+  userValidation,
 };
