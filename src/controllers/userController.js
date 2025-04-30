@@ -95,7 +95,7 @@ const changePassword = async (req, res, next) => {1
 
 		let valid = await compareSync(oldPassword, user.password);
 		if (!valid) {
-			return res.response(INCORRECT_PASS, {}, 401, INCORRECT_PASS_EXCEPTION, false);
+			return res.response(INCORRECT_PASS, {}, 400, INCORRECT_PASS_EXCEPTION, false);
 		}
     const passHash = await hashSync(newPassword, SALT_ROUNDS);
 		await db.Users.update({ password: passHash }, { where: { id: user.id } });
