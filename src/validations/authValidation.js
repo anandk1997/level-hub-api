@@ -3,6 +3,7 @@
 const Joi = require('joi').extend(require('@joi/date'));
 // const { ErrorHandler } = require('../helpers');
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
+const { ROLES } = require('../constants');
 
 
 /**
@@ -22,7 +23,17 @@ const signupValidation = async (req, res, next) => {
 		gender: Joi.string().valid('male', 'female', 'others').optional(),
 		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
 		category: Joi.string().optional(),
-		type: Joi.string().valid('gym', 'coach', 'parent', 'individual').required(),
+		type: Joi.string().valid(
+			ROLES.GYM_OWNER,
+			ROLES.COACH_OWNER,
+			ROLES.COACH_HEAD,
+			ROLES.COACH,
+			ROLES.PARENT_OWNER,
+			ROLES.PARENT,
+			ROLES.CHILD,
+			ROLES.INDIVIDUAL_OWNER,
+			ROLES.INDIVIDUAL,
+		).required(),
 		organizationName: Joi.string().max(256).optional(),
 	});
 	try {

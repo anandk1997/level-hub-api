@@ -9,7 +9,7 @@
     "start": "nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
     "start:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js",
     "seed:generate": "sequelize-cli seed:generate --name seed-data",
-    "seed:apply": "sequelize-cli db:seed:all",
+    "seed:apply": "sequelize-cli db:seed:all --config src/db/config/config.js",
     "db:create": "sequelize-cli db:create --config src/db/config/config.js",
     "mg:status": "sequelize-cli db:migrate:status",
     "mg:generate": "sequelize-cli migration:generate --name init --config src/db/config/config.js --migrations-path src/db/migrations",

@@ -13,7 +13,7 @@ module.exports = {
       name: {
         type: Sequelize.STRING,
         allowNull: false,
-        trim: true,
+        unique: true,
       },
       isSuperAdmin: {
         type: Sequelize.BOOLEAN,
@@ -21,41 +21,62 @@ module.exports = {
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       }
     });
     await queryInterface.bulkInsert('roles', [
       {
-        name: 'admin',
+        name: 'ADMIN',
         isSuperAdmin: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       }, {
-        name: 'gym',
+        name: 'GYM.OWNER',
         isSuperAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }, {
-        name: 'coach',
+        name: 'COACH.OWNER',
         isSuperAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }, {
-        name: 'parent',
+        name: 'COACH.HEAD',
+        isSuperAdmin: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }, {
+        name: 'COACH',
+        isSuperAdmin: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }, {
+        name: 'PARENT.OWNER',
+        isSuperAdmin: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }, {
+        name: 'PARENT',
         isSuperAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       },{
-        name: 'child',
+        name: 'CHILD',
         isSuperAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }, {
-        name: 'individual',
+        name: 'INDIVIDUAL.OWNER',
+        isSuperAdmin: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }, {
+        name: 'INDIVIDUAL',
         isSuperAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
