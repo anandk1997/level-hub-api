@@ -1,19 +1,109 @@
 'user strict';
 
-const IncomingForm = require('formidable').IncomingForm;
-const fs = require('fs');
-const bcrypt = require('bcrypt');
-const { Op } = require('sequelize');
-const moment = require('moment');
-// const { Op, fn, col, where } = require('sequelize');
+const { hashSync, compareSync } = require('bcrypt');
 
-const db = require("../models");
-const config = require('../../config');
-const { ErrorHandler } = require('../helpers/errorhandler');
-const User = require('../models/userModel');
-// const Mailer = require('../helpers/mailer');
+const {
+	SALT_ROUNDS
+} = require('../../config');
+const { db } = require('../db');
+const {
+	USER_DOESNT_EXISTS,
+	USER_DOESNT_EXISTS_EXCEPTION,
+	INCORRECT_PASS,
+	INCORRECT_PASS_EXCEPTION,
+	PASSWORD_UPDATE_SUCCESS,
+	FETCH_PROFILE_SUCCESS,
+	UPDATE_PROFILE_SUCCESS,
+} = require('../messages');
+const Auth = require('../middlewares/auth');
 
-const saltRounds = 10;
+/**
+ * API to fetch user profile
+ * 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchUserProfile = async (req, res, next) => {
+	try {
+		const userId = req.userId;
+		const result = await db.Users.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'fullName'],
+			where: { id: userId },
+		});
+		return res.response(FETCH_PROFILE_SUCCESS, { profile: result });
+	} catch (error) {
+		return next(new ErrorHandler(200, config.common_err_msg, error));
+	}
+};
+
+/**
+ * API to update user profile
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const updateUserProfile = async (req, res, next) => {
+	try {
+		const userId = req.userId, role = req.role;
+		let {
+			firstName,
+			lastName,
+			phone,
+			gender,
+			dob,
+			organizationName
+		} = req.body;
+
+		const user = {
+      firstName: firstName?.trim(),
+      lastName: lastName ? lastName?.trim() : null,
+      phone: phone ? phone?.trim() : null,
+      gender: gender ? gender?.trim() : null,
+      dob: dob,
+      organizationName: organizationName ? organizationName?.trim() : null,
+    };
+		await db.Users.update(user, { where: { id: userId } });
+		return res.response(UPDATE_PROFILE_SUCCESS);
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * API to change user password
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const changePassword = async (req, res, next) => {1
+	try {
+		const { oldPassword, newPassword } = req.body, userId = req.userId;
+		const user = await db.Users.findOne({
+			attributes: [
+				'id',
+				'firstName',
+				'lastName',
+				'email',
+				'password',
+			],
+			where: { id: userId },
+		});
+		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
+
+		let valid = await compareSync(oldPassword, user.password);
+		if (!valid) {
+			return res.response(INCORRECT_PASS, {}, 400, INCORRECT_PASS_EXCEPTION, false);
+		}
+    const passHash = await hashSync(newPassword, SALT_ROUNDS);
+		await db.Users.update({ password: passHash }, { where: { id: user.id } });
+		return res.response(PASSWORD_UPDATE_SUCCESS);
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
 
 /**
  * Check if email exists
@@ -273,27 +363,6 @@ const get_profile = async (req, res, next) => {
 	}
 };
 
-/**
- * Update admin profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const update_profile = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		if (!request.first_name || !request.email) { return next(new ErrorHandler(400, 'Missing required fields!')); }
-		// return res.json({ success: true, message: 'Fetch user profile successfully!', request });
-		request.first_name = request.first_name.trim();
-		request.last_name = (request.last_name) ? request.last_name.trim() : null;
-		request.email = request.email.trim();
-		let result = await User.update(request, { where: { id: userId } }); // , logging: console.log
-		return res.json({ success: true, message: 'Updated profile successfully!' });
-	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
-};
 
 /**
  * Update profile image
@@ -322,25 +391,7 @@ const delete_file = (filepath) => {
 };
 
 
-/**
- * Fetch user profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const get_user_profile = async (req, res, next) => {
-	try {		
-		const userId = req.user_id;
-		const result = await db.users.findOne({
-			attributes: ['id', 'name', 'email', 'address', 'city', 'state', 'zip', 'apartmentName', 'unitNumber', 'rentAmount', 'impactReason'],
-			where: { id: userId, role: 'user' },
-		});
-		return res.json({ success: true, message: 'Fetch user profile successfully!', data: { profile_details: result } });
-	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
-	}
-};
+
 
 
 /**
@@ -432,10 +483,7 @@ const update_profile_image = async (req, res, next) => {
 
 
 module.exports = {
-	get_user_profile,
-	update_user_profile,
-	update_user_password,
-	get_users,
-	get_user_details,
-	get_user_filter,
+	fetchUserProfile,
+	updateUserProfile,
+	changePassword,
 };

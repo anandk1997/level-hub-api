@@ -16,6 +16,10 @@ const {
   ACTIVITY_APPROVED_SUCCESS,
   ACTIVITY_APPROVAL_EXISTS,
   ACTIVITY_HISTORY_EXISTS_EXCEPTION,
+  ACTIVITIES_DOESNT_EXISTS,
+  ACTIVITY_ASSIGNEE_MISMATCH,
+  ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION,
+  ACTIVITY_DELETED_SUCCESS,
 } = require('../messages.js');
 
 const { fetchUser } = userHelper;
@@ -40,10 +44,10 @@ const createActivity  = async (req, res, next) => {
     startDate,
     endDate,
     isSelfAssignment
-  } = req.body;
+  } = req?.body;
   try {
     const user = await fetchUser(req.email, null, ['id', 'email']);
-    if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
+    if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 400, USER_DOESNT_EXISTS_EXCEPTION, false); }
     // return res.json({ user, request: req.body, email: req.email, username: req.username, role: req.role });
 
     const result = await db.Activities.upsert({
@@ -65,6 +69,7 @@ const createActivity  = async (req, res, next) => {
   }
 };
 
+
 /**
  * Fetch activities listing
  *
@@ -75,25 +80,64 @@ const createActivity  = async (req, res, next) => {
  * @param {import('express').NextFunction} next
  */
 const fetchActivities = async (req, res, next) => {
-  const { status } = req.query;
-
+  
   try {
-    let where = {};
-    if (status) {
-      const currentDate = dayjs().format("YYYY-MM-DD");
-      where = {
-        ...where,
-        startDate: { [Op.lte]: currentDate },
-        endDate: { [Op.gte]: currentDate }
-      };
+    let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
+    const userId = parseInt(req.userId)
+    const pageOffset = pageSize * (page - 1);
+    const filterStartDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+    const filterEndDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
+
+    let whereClause = {
+      assigneeId: userId,
+      [Op.and]: [
+        { startDate: { [Op.lte]: filterEndDate } },
+        { endDate:   { [Op.gte]: filterStartDate } },
+      ],
+
+    };
+
+    let includeClause = {
+      model: db.ActivityHistory,
+      as: 'activityHistory',
+      required: false,
+      attributes: ['id', 'approvalDate', 'assigneeId', 'approvedByName', 'approvedById'],
+      on: {
+        [Op.and]: [
+          where(col('activityHistory.activityId'), '=', col('Activities.id')),
+          where(col('activityHistory.assigneeId'), '=', userId),
+          literal(`DATE("activityHistory"."approvalDate") BETWEEN '${filterStartDate}' AND '${filterEndDate}'`)
+        ]
+      },
+    };
+
+    if (status === 'completed') {
+      includeClause.required = true;
+    } else if (status === 'notCompleted') {
+      includeClause.required = false;
+      whereClause['$activityHistory.id$'] = null;
     }
     
-    const { count, rows } = await db.Activities.findAndCountAll({ where });
-    return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, rows });
+    const { count, rows } = await db.Activities.findAndCountAll({
+      where: whereClause,
+      include: includeClause,
+      limit: pageSize,
+      offset: pageOffset,
+      order: [['id', 'DESC']],
+      distinct: true,
+      subQuery: false
+    });
+    const activities = rows.map(activity => ({
+      ...activity.dataValues,
+      activityHistory: activity?.activityHistory?.length ? activity?.activityHistory[0]: [],
+      completed: !!activity?.activityHistory?.length
+    }));
+    return res.response(ACTIVITY_LIST_FETCH_SUCCESS, { count, activities });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
 };
+
 
 /**
  * Fetch activity details
@@ -115,17 +159,23 @@ const fetchActivityDetails = async (req, res, next) => {
 /**
  * Fetch if activity lies on current date
  * 
- * @param {number} activityId
+ * @param {Array} activityIds
  * @param {Array?} attributes
  */
-const checkIfActivityIsActive = async (activityId, attributes) => {
-  const currentDate = dayjs().format("YYYY-MM-DD");
-  return await db.Activities.findOne({
+const checkIfActivityIsActive = async (activityIds, attributes) => {
+  const currentDate = dayjs().format("YYYY-MM-DD"), currentDay = dayjs().format('dddd').toLowerCase();
+  return await db.Activities.findAll({
     attributes,
     where: {
-      id: activityId,
+      id: { [Op.in]: activityIds },
       startDate: { [Op.lte]: currentDate },
-      endDate: { [Op.gte]: currentDate }
+      endDate: { [Op.gte]: currentDate },
+      [Op.and]: literal(`
+        CASE
+          WHEN "isRecurring" = true THEN '${currentDay}' = ANY("assignedDays")
+          ELSE "assignedDays" IS NULL
+        END  
+      `)
     }
   });
 };
@@ -133,20 +183,19 @@ const checkIfActivityIsActive = async (activityId, attributes) => {
 /**
  * Check if activity is already approved on CURRENT DATE
  * 
- * @param {number} activityId
+ * @param {Array} activityIds
  */
-const checkIfActivityIsApproved = async (activityId) => {
-  return await db.ActivityHistory.findOne({
+const checkIfActivityIsApproved = async (activityIds) => {
+  return await db.ActivityHistory.findAll({
     attributes: ['id', 'activityId', 'approvalDate'],
     where: {
-      activityId,
+      activityId: { [Op.in]: activityIds },
       [Op.and]: [
         where(fn('DATE', col('approvalDate')), literal('CURRENT_DATE'))
       ]
     },
   });
 };
-
 
 /**
  * Approve an activity
@@ -157,35 +206,61 @@ const checkIfActivityIsApproved = async (activityId) => {
  */
 const approveActivity = async (req, res, next) => {
   try {
-    const activityId = parseInt(req.params.id), approvedById = parseInt(req.userId), approvedByName = "Test UserName";
+    const { activityIds } = req.body, approvedById = parseInt(req.userId), approvedByName = "Test UserName";
     const currentDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
-    const currentDay = dayjs().format("dddd").toLowerCase();
+    
+    // Check if all activities are active
+    const activities = await checkIfActivityIsActive(activityIds, ['id', 'title', 'description', 'videoLink', 'xp', 'assigneeId', 'assignedById']);
+    if (activities?.length !== activityIds.length) { return res.response(ACTIVITIES_DOESNT_EXISTS, {}, 400, ACTIVITY_DOESNT_EXISTS_EXCEPTION, false); }
 
-    const activity = await checkIfActivityIsActive(activityId, ['id', 'title', 'description', 'videoLink', 'xp', 'assigneeId', 'assignedById']);
-    if (!activity?.id) { return res.response(ACTIVITY_DOESNT_EXISTS, {}, 401, ACTIVITY_DOESNT_EXISTS_EXCEPTION, false); }
-
-    const checkIfAlreadyApproved = await checkIfActivityIsApproved(activityId);
-    if (checkIfAlreadyApproved?.id) {
-      return res.response(ACTIVITY_APPROVAL_EXISTS, {}, 401, ACTIVITY_HISTORY_EXISTS_EXCEPTION, false);
+    // Check if all activities are assigned to the same user
+    const assignedUserIds = [...new Set(activities.map(activity => activity.assigneeId))];
+    if (assignedUserIds.length > 1) { return res.response(ACTIVITY_ASSIGNEE_MISMATCH, {}, 400, ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION, false); }
+    
+    // Check if activity is already approved on CURRENT DATE
+    const checkIfAlreadyApproved = await checkIfActivityIsApproved(activityIds);
+    if (checkIfAlreadyApproved?.length) {
+      return res.response(ACTIVITY_APPROVAL_EXISTS, {}, 400, ACTIVITY_HISTORY_EXISTS_EXCEPTION, false);
     }
+    
+    const txn = await db.sequelize.transaction(async (t) => {
+      const histories = activities.map(activity => ({
+        activityId: activity.id,
+        title: activity.title,
+        description: activity.description,
+        videoLink: activity.videoLink,
+        xp: activity.xp,
+        assigneeId: activity.assigneeId,
+        assignedById: activity.assignedById,
+        approvalDate: currentDate,
+        approvedByName,
+        approvedById,
+      }));
+      const totalXP = activities.reduce((total, activity) => total + activity.xp, 0);
+      const result = await db.ActivityHistory.bulkCreate(histories, { transaction: t });   
+      return await db.Levels.increment('currentXP', {
+        by: totalXP, where: { userId: activities[0].assigneeId }
+      }, { transaction: t });
+    });
 
-    const history = {
-      activityId,
-      title: activity.title,
-      description: activity.description,
-      videoLink: activity.videoLink,
-      xp: activity.xp,
-      assigneeId: activity.assigneeId,
-      assignedById: activity.assignedById,
-      approvalDate: currentDate,
-      approvalDay: currentDay,
-      approvedByName,
-      approvedById,
-    };
+    return res.response(ACTIVITY_APPROVED_SUCCESS);
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
 
-    const result = await db.ActivityHistory.create(history);
-    await db.Levels.increment('currentXP', { by: activity.xp, where: { userId: activity.assigneeId } });
-    return res.response(ACTIVITY_APPROVED_SUCCESS, result);
+/**
+ * Delete an activity
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const deleteActvity = async (req, res, next) => {
+  try {
+    const activityId = parseInt(req.params.id);
+    const result = await db.Activities.destroy({ where: { id: activityId } })
+    return res.response(ACTIVITY_DELETED_SUCCESS, result);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -196,4 +271,5 @@ module.exports = {
   fetchActivities,
   approveActivity,
   fetchActivityDetails,
+  deleteActvity,
 }

@@ -3,14 +3,15 @@
 const Joi = require('joi').extend(require('@joi/date'));
 // const { ErrorHandler } = require('../helpers');
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
+const { ROLES } = require('../constants');
 
 
 /**
  * Sign Up user schema validation
  * 
- * @param {Object} req
- * @param {Object} res
- * @param {Function} next
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const signupValidation = async (req, res, next) => {
 	const schema = Joi.object({
@@ -22,7 +23,17 @@ const signupValidation = async (req, res, next) => {
 		gender: Joi.string().valid('male', 'female', 'others').optional(),
 		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
 		category: Joi.string().optional(),
-		type: Joi.string().valid('gym', 'coach', 'parent', 'individual').required(),
+		type: Joi.string().valid(
+			ROLES.GYM_OWNER,
+			ROLES.COACH_OWNER,
+			ROLES.COACH_HEAD,
+			ROLES.COACH,
+			ROLES.PARENT_OWNER,
+			ROLES.PARENT,
+			ROLES.CHILD,
+			ROLES.INDIVIDUAL_OWNER,
+			ROLES.INDIVIDUAL,
+		).required(),
 		organizationName: Joi.string().max(256).optional(),
 	});
 	try {
@@ -59,9 +70,9 @@ const verifyOtpValidation = async (req, res, next) => {
 /**
  * Middleware to vresent registration verification OTP
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const resendOtp = async (req, res, next) => {
 	const schema = Joi.object({
@@ -81,9 +92,9 @@ const resendOtp = async (req, res, next) => {
 /**
  * Sign In user schema validation
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const signinValidation = async (req, res, next) => {
 	const schema = Joi.object({
@@ -101,9 +112,9 @@ const signinValidation = async (req, res, next) => {
 /**
  * Reset password schema validation
  * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const resetPasswordValidation = async (req, res, next) => {
 	const schema = Joi.object({
@@ -123,29 +134,7 @@ const resetPasswordValidation = async (req, res, next) => {
 	}
 };
 
-/**
- * Change password schema validation
- * 
- * @param {Object} req 
- * @param {Object} res 
- * @param {Function} next 
- */
-const changePasswordValidation = async (req, res, next) => {
-	const schema = Joi.object({
-		email: Joi.string().email({ minDomainSegments: 2 }).required(),
-		password: Joi.string().min(8).max(128).required().label('Password'),
-		confirmPassword: Joi.string().valid(Joi.ref('password')).required()
-				.label('Confirm Password').options({
-					messages: { 'any.only': '{{#label}} does not match' }
-				}),
-	});
-	try {
-		await schema.validateAsync(req.body);
-		next();
-	} catch (error) {
-		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
-	}
-};
+
 
 
 module.exports = {
@@ -154,5 +143,4 @@ module.exports = {
 	verifyOtpValidation,
 	resendOtp,
 	resetPasswordValidation,
-	changePasswordValidation,
 };

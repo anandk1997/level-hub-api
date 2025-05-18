@@ -23,7 +23,7 @@ const joiExtended = Joi.extend(joiDate);
 const saveActivityValidation = async (req, res, next) => {
   const currentDate = dayjs().startOf('day').toDate();
   const maxStartDate = dayjs().startOf('day').add(1, 'year').toDate();
-  const maxEndDate = dayjs(req.body.startDate).startOf('day').add(1, 'year').toDate();
+  const maxEndDate = dayjs(req?.body?.startDate).startOf('day').add(1, 'year').toDate();
 
 	const schema = Joi.object({
     activityId: Joi.number().integer().optional(),
@@ -54,7 +54,7 @@ const saveActivityValidation = async (req, res, next) => {
     isSelfAssignment: Joi.boolean().required()
 	});
 	try {
-		await schema.validateAsync(req.body);
+		const a = await schema.val
 		next();
 	} catch (error) {
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
@@ -74,10 +74,13 @@ const fetchActivitiesValidation = async (req, res, next) => {
   const schema = Joi.object({
     startDate: joiExtended.date().format('YYYY-MM-DD').raw().optional(),
     endDate: joiExtended.date().format('YYYY-MM-DD').raw().optional().min(Joi.ref('startDate')),
-    status: Joi.string().valid('active', 'inactive').optional(),
+    status: Joi.string().valid('completed', 'notCompleted', 'all').optional(),
+    assigneeId: Joi.string().optional(),
+    page: Joi.number().integer().strict().min(1).optional(),
+    pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
   });
   try {
-    await schema.validateAsync(req.query);
+    await schema.validateAsync(req.body);
     next();
   } catch (error) {
     return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
@@ -93,10 +96,11 @@ const fetchActivitiesValidation = async (req, res, next) => {
  */
 const approveActivityValidation = async (req, res, next) => {
   const schema = Joi.object({
+    activityIds: Joi.array().items(Joi.number().integer()).min(1).required(),
     remarks: Joi.string().max(255).optional(),
   });
   try {
-    await schema.validateAsync(req.query);
+    await schema.validateAsync(req.body);
     next();
   } catch (error) {
     return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);

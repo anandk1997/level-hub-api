@@ -59,7 +59,7 @@ const fetchLevelInfo = async (req, res, next) => {
       attributes: ['id', 'levelXP', 'currentXP'],
       where: { userId: user.id },
     });
-    return res.response(levelInfo?.id ? LEVEL_FETCH_SUCCESS : LEVEL_NOT_SET, levelInfo);
+    return res.response(levelInfo?.id ? LEVEL_FETCH_SUCCESS : LEVEL_NOT_SET, levelInfo, 200, undefined, !!levelInfo?.id);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }

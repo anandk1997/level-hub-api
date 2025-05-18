@@ -82,9 +82,16 @@ module.exports = {
         type: Sequelize.DATE,
       }
     });
+    await queryInterface.addIndex('activities', {
+      fields: ['assignedDays'],
+      using: 'GIN',
+      name: 'activities_assignedDays_gin'
+    });
+
   },
 
   async down (queryInterface, Sequelize) {
+    await queryInterface.removeIndex('activities', 'activities_assignedDays_gin');
     await queryInterface.dropTable('activities');
   }
 };

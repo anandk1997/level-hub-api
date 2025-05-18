@@ -3,8 +3,22 @@
 const { Router } = require("express");
 const router = Router();
 
-const { levelCtrl, actCtrl } = require("../../controllers");
-const { levelValidation, activityValidation } = require("../../validations");
+const {
+  levelCtrl,
+  actCtrl,
+  reportCtrl,
+  dashCtrl,
+  templateCtrl,
+  userCtrl,
+} = require("../../controllers");
+const {
+  levelValidation,
+  activityValidation,
+  dashValidation,
+  reportsValidation,
+  templateValidation,
+  userValidation,
+} = require("../../validations");
 const { auth } = require('../../middlewares');
 
 // const applicationFilesUploader = require("../middlewares/applicationFilesUploader");
@@ -19,23 +33,36 @@ router.route("/level")
 
 // ACTIVITIES
 router.route("/activity")
-  .post(activityValidation.saveActivityValidation , actCtrl.createActivity)
-  .get(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
-router.route("/activity/:id")
-  .get(actCtrl.fetchActivityDetails);
-router.route("/activity/approve/:id")
+  .post(activityValidation.saveActivityValidation, actCtrl.createActivity);
+router.route("/activity/list")
+  .post(activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+router.route("/activity/approve")
   .put(activityValidation.approveActivityValidation, actCtrl.approveActivity);
+router.route("/activity/:id")
+  .get(actCtrl.fetchActivityDetails)
+  .delete(actCtrl.deleteActvity);
 
-// APPLICATIONS
-// router.route('/application').post(applicationFilesUploader, applCtrl.save_application);
-// router.post('/applications', applValidation.userApplicationListing, applCtrl.get_user_applications);
-// router.get('/applications/:id', applCtrl.get_application_details);
-// PROFILE
-// router.route('/profile')
-// 	.get(userCtrl.get_user_profile)
-// 	.put(userValidation.updateProfileValidation, userCtrl.update_user_profile);
-// router.put("/profile/update_password", userValidation.updatePasswordValidation, userCtrl.update_user_password);
+// ACTIVITY TEMPLATE
+router.route("/template")
+  .get(templateValidation.fetchTemplatesValidation, templateCtrl.fetchActivityTemplates)
+  .post(templateValidation.saveTemplateValidation, templateCtrl.saveActivityTemplate);
+router.route("/template/:id")
+  .get(templateCtrl.fetchActivityTemplateDetails)
+  .delete(templateCtrl.deleteActivityTemplate);
 
-// router.get('/states', stateCtrl.get_all_states);
+// REPORTS
+router.get("/report/activity", reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
+
+
+// DASHBOARD
+router.get("/dashboard/monthly", dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
+router.get("/dashboard/all", dashCtrl.fetchAllTimeActivities);
+router.get("/dashboard/today", dashCtrl.fetchTodaysActivities);
+
+// USERS
+router.put("/password/change", userValidation.changePasswordValidation, userCtrl.changePassword);
+router.route("/profile")
+  .get(userCtrl.fetchUserProfile)
+  .put(userValidation.updateProfileValidation, userCtrl.updateUserProfile);
 
 module.exports = router;

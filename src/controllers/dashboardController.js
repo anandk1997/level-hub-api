@@ -1,56 +1,134 @@
-'user strict';
+'use strict';
 
-const { Op } = require('sequelize');
-const moment = require('moment');
-// const { Op, fn, col, where } = require('sequelize');
+const dayjs = require('dayjs');
 
-const db = require("../models");
-const config = require('../../config');
-const { ErrorHandler } = require('../helpers/errorhandler');
+const { db } = require('../db');
+const {
+  ACTIVITY_GRAPH_FETCH_SUCCESS,
+  DASH_ALL_STATS_FETCH_SUCCESS,
+  DASH_TODAY_STATS_FETCH_SUCCESS,
+} = require('../messages');
 
-const getTotalUsers = async () => {
-  return await db.users.count({ where: { role: 'user' } });
-};
-
-const getTotalApplications = async () => {
-  return await db.applications.count();
-};
-
-const getTodayApplications = async () => {
-  const dayStart = moment().format('YYYY-MM-DD 00:00:00');
-  const dayEnd = moment().format('YYYY-MM-DD 23:59:59');
-
-  return await db.applications.count({
-    where: {
-      createdAt: {
-        [Op.gte]: dayStart,
-        [Op.lte]: dayEnd
-      }
-    }
-  });
-};
+const { Op, fn, col, where, literal } = db.Sequelize;
 
 
 /**
- * Fetch dashboard stats
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * Fetch activity information for a monthly graph
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const get_dashboard_stats = async (req, res, next) => {
-	try {
-    const totalUser = await getTotalUsers();
-    const totalApplication = await getTotalApplications();
-    const todayApplication = await getTodayApplications();
+const fetchMonthlyActivityHistory = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.userId);
+    const { date = dayjs().startOf('month').format("YYYY-MM-DD") } = req.query;
+    const startDate = dayjs(date).startOf('month').format("YYYY-MM-DD HH:mm:ss");
+    let endDate = dayjs(date).endOf('month').format("YYYY-MM-DD HH:mm:ss");
 
-		return res.json({ success: true, message: 'Fetched user details successfully!', data: { totalUser, totalApplication, todayApplication } });
-	} catch (error) {
-		return next(new ErrorHandler(500, config.common_err_msg, error));
-	}
+    if (dayjs().isBefore(dayjs(endDate))) {
+      endDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    const monthlyActivities = await db.ActivityHistory.findAll({
+      attributes: [
+        [fn('DATE', col('approvalDate')), 'approvalDate'], 
+        [fn('COUNT', col('id')), 'activityCount'],
+        [fn('SUM', col('xp')), 'totalXP']
+      ],
+      where: {
+        assigneeId: userId,
+        [Op.and]: [
+          literal(`"approvalDate" BETWEEN '${startDate}' AND '${endDate}' `)
+        ]
+      },
+      group: [fn('DATE', col('approvalDate'))],
+      order: [['approvalDate', 'DESC']]
+    });
+    
+    return res.response(ACTIVITY_GRAPH_FETCH_SUCCESS, { monthlyActivities });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
 };
 
+/**
+ * Fetch all time stats for user activity
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchAllTimeActivities = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.userId);
+    const completedResult = await db.ActivityHistory.findOne({
+      attributes: [
+        [fn('COUNT', col('id')), 'activityCount'],
+        [fn('SUM', col('xp')), 'totalXP'],
+      ],
+      where: {
+        assigneeId: userId,
+      },
+      group: ['assigneeId']
+    });
+    return res.response(DASH_ALL_STATS_FETCH_SUCCESS, { completed: completedResult });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch today's stats for user activities
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchTodaysActivities = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.userId);
+    const currentDate = dayjs().format("YYYY-MM-DD"), currentDay = dayjs().format('dddd').toLowerCase();
+    const assignedStats = await db.Activities.findOne({
+      attributes: [
+        [fn('COUNT', col('id')), 'activityCount'],
+        [fn('SUM', col('xp')), 'totalXP'],
+      ],
+      where: {
+        assigneeId: userId,
+        startDate: { [Op.lte]: currentDate },
+        endDate: { [Op.gte]: currentDate },
+        [Op.and]: literal(`
+          CASE
+            WHEN "isRecurring" = true THEN '${currentDay}' = ANY("assignedDays")
+            ELSE "assignedDays" IS NULL
+          END  
+        `)
+      },
+      group: ['assigneeId']
+    });
+
+    const completedStats = await db.ActivityHistory.findOne({
+      attributes: [
+        [fn('COUNT', col('id')), 'activityCount'],
+        [fn('SUM', col('xp')), 'totalXP'],
+      ],
+      where: {
+        assigneeId: userId,
+        [Op.and]: [
+          where(fn('DATE', col('approvalDate')), currentDate)
+        ]
+      },
+      group: ['assigneeId']
+    });
+    return res.response(DASH_TODAY_STATS_FETCH_SUCCESS, { assigned: assignedStats, completed: completedStats });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
 
 module.exports = {
-	get_dashboard_stats
-};
+  fetchMonthlyActivityHistory,
+  fetchAllTimeActivities,
+  fetchTodaysActivities,
+}

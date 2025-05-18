@@ -1,7 +1,7 @@
 'user strict';
 
-const Joi = require('joi');
-const { ErrorHandler } = require('../helpers/errorhandler');
+const Joi = require('joi').extend(require('@joi/date'));
+const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
 
 /**
  * Update user profile schema validation
@@ -12,46 +12,46 @@ const { ErrorHandler } = require('../helpers/errorhandler');
  */
 const updateProfileValidation = async (req, res, next) => {
 	const schema = Joi.object({
-		name: Joi.string().min(1).max(255).required(),
-		address: Joi.string().max(255).required(),
-		city: Joi.string().max(128).required(),
-		state: Joi.string().max(128).required(),
-		zip: Joi.string().max(32).required(),
-		apartmentName: Joi.string().max(255).required(),
-		unitNumber: Joi.string().max(255).allow('').optional(),
-		rentAmount: Joi.string().required(),
-		impactReason: Joi.string().required(),
+		firstName: Joi.string().min(1).max(128).required(),
+		lastName: Joi.string().max(128).allow('').optional(),
+		phone: Joi.string().max(20).optional(),
+		gender: Joi.string().valid('male', 'female', 'others').optional(),
+		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
+		organizationName: Joi.string().max(256).optional(),
 	});
 	try {
 		await schema.validateAsync(req.body);
 		next();
 	} catch (error) {
-		console.log("ERROR in  signupValidation : ", error);
-		return next(new ErrorHandler(400, error?.message, error ));        
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
 };
 
 /**
- * Update user password schema validation
+ * Change password schema validation
  * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const updatePasswordValidation = async (req, res, next) => {
+const changePasswordValidation = async (req, res, next) => {
 	const schema = Joi.object({
-		password: Joi.string().min(8).max(128).required(),
+		oldPassword: Joi.string().required(),
+		newPassword: Joi.string().min(8).max(128).required().label('New Password'),
+		confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required()
+				.label('Confirm Password').options({
+					messages: { 'any.only': '{{#label}} does not match' }
+				}),
 	});
 	try {
 		await schema.validateAsync(req.body);
 		next();
 	} catch (error) {
-		console.log("ERROR in  signupValidation : ", error);
-		return next(new ErrorHandler(400, error?.message, error ));        
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
 };
 
 module.exports = {
 	updateProfileValidation,
-	updatePasswordValidation,
+	changePasswordValidation,
 };

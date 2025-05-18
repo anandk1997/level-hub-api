@@ -1,25 +1,20 @@
 'use strict';
-const { DAYS } = require('../../constants');
-const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
+  /**
+   * Create table on migration commands
+   * 
+   * @param {import('sequelize').QueryInterface} queryInterface 
+   * @param {import('sequelize').Sequelize} Sequelize 
+   */
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('activityHistory', {
+    await queryInterface.createTable('activityTemplates', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false
-      },
-      activityId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'activities',
-          key: "id",
-        },
-        onDelete: "CASCADE",
       },
       title: {
         type: Sequelize.STRING,
@@ -32,9 +27,6 @@ module.exports = {
       videoLink: {
         type: Sequelize.STRING,
         allowNull: true,
-        validate: {
-          isUrl: true
-        }
       },
       xp: {
         type: Sequelize.INTEGER,
@@ -42,31 +34,7 @@ module.exports = {
         defaultValue: 0,
         comment: 'Experience Points'
       },
-      assigneeId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      },
-      assignedById: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      },
-      approvalDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      approvedByName: {
-        type: Sequelize.STRING, // Name of the person who approved the completion
-        allowNull: false,
-      },
-      approvedById: {
+      userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -84,10 +52,16 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
       },
-    });
+    });    
   },
 
+  /**
+   * Drop table on reverting commands
+   * 
+   * @param {import('sequelize').QueryInterface} queryInterface 
+   * @param {import('sequelize').Sequelize} Sequelize 
+   */
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('activityHistory');
+    await queryInterface.dropTable('activityTemplates');
   }
 };

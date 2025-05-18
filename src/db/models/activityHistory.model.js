@@ -1,9 +1,7 @@
 'use strict';
 
 const { Model } = require('sequelize');
-const { DAYS } = require('../../constants');
 
-const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
 
 /**
  * Activity History Model Defination
@@ -84,10 +82,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     approvalDate: {
       type: DataTypes.DATE,
-      allowNull: false
-    },
-    approvalDay: {
-      type: DataTypes.ENUM(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY),
       allowNull: false
     },
     approvedByName: {

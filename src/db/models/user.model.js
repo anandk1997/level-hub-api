@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasOne(models.Levels, { foreignKey: 'userId' });
       Users.hasMany(models.Activities, { foreignKey: 'assigneeId', as: "assignee" });
       Users.hasMany(models.Activities, { foreignKey: 'assignedById', as: "assignedBy" });
+      Users.hasMany(models.ActivityTemplates, { foreignKey: 'userId'});
     }
   }
   Users.init({

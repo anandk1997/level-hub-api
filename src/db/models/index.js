@@ -20,6 +20,8 @@ const {
  * @typedef {import('sequelize').Model} UserConfig
  * @typedef {import('sequelize').Model} Activities
  * @typedef {import('sequelize').Model} ActivityHistory
+ * @typedef {import('sequelize').Model} ActivityTemplates
+ * @typedef {import('sequelize').Model} Permissions
 */
 
 
@@ -33,7 +35,9 @@ const {
  * @property {UserConfig} UserConfig - UserConfig model
  * @property {Levels} Levels - Levels model
  * @property {Activities} Activities - Activities model
- * @property {ActivityHistory} ActivityHistory - Activities model
+ * @property {ActivityHistory} ActivityHistory - ActivityHistory model
+ * @property {ActivityTemplates} ActivityTemplates - ActivityTemplates model
+ * @property {Permissions} Permissions - Permissions model
  */
 
 /** @type {DBModels} */
@@ -46,9 +50,20 @@ const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
   host: DB_HOST,
   port: DB_PORT,
   dialect: "postgres",
-  // logging: false,
+  /* dialectOptions: {
+    useUTC: false,
+    dateStrings: true,
+    timezone: '+00:00',
+    typeCast: function (field, next) {
+      if (field.type === 'DATETIME') {
+        return field.string()
+      }
+      return next()
+    },
+  }, */
+  logging: process.env.NODE_ENV === 'development',
   ssl: {
-    require: process.NODE_ENV !== 'development' ? true : false,
+    require: process.env.NODE_ENV !== 'development' ? true : false,
     rejectUnauthorized: false,
   },
 });
