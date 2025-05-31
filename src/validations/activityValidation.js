@@ -1,5 +1,6 @@
 'user strict';
 
+/** @type {import('joi')} */
 const Joi = require('joi');
 const joiDate = require('@joi/date');
 const { DAYS } = require('../constants');
@@ -25,6 +26,7 @@ const saveActivityValidation = async (req, res, next) => {
   const maxStartDate = dayjs().startOf('day').add(1, 'year').toDate();
   const maxEndDate = dayjs(req?.body?.startDate).startOf('day').add(1, 'year').toDate();
 
+	/** @type {import('joi').ObjectSchema} */
 	const schema = Joi.object({
     activityId: Joi.number().integer().optional(),
 		title: Joi.string().min(1).max(256).required(),

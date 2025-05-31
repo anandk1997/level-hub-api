@@ -1,5 +1,6 @@
 'user strict';
 
+/** @type {import('joi')} */
 const Joi = require('joi').extend(require('@joi/date'));
 // const { ErrorHandler } = require('../helpers');
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
@@ -14,6 +15,7 @@ const { ROLES } = require('../constants');
  * @param {import('express').NextFunction} next
  */
 const signupValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
 	const schema = Joi.object({
 		firstName: Joi.string().min(1).max(128).required(),
 		lastName: Joi.string().max(128).allow('').optional(),
@@ -23,17 +25,23 @@ const signupValidation = async (req, res, next) => {
 		gender: Joi.string().valid('male', 'female', 'others').optional(),
 		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
 		category: Joi.string().optional(),
-		type: Joi.string().valid(
-			ROLES.GYM_OWNER,
-			ROLES.COACH_OWNER,
-			ROLES.COACH_HEAD,
-			ROLES.COACH,
-			ROLES.PARENT_OWNER,
-			ROLES.PARENT,
-			ROLES.CHILD,
-			ROLES.INDIVIDUAL_OWNER,
-			ROLES.INDIVIDUAL,
-		).required(),
+		source: Joi.string().valid('self', 'invite').required(),
+		type: Joi.when('source', {
+			is: 'self',
+			then: Joi.string().valid(
+				ROLES.GYM_OWNER,
+				ROLES.COACH_OWNER,
+				ROLES.PARENT_OWNER,
+				ROLES.INDIVIDUAL_OWNER,
+			).required(),
+			otherwise: Joi.string().valid(
+				ROLES.COACH_HEAD,
+				ROLES.COACH,
+				ROLES.PARENT,
+				ROLES.CHILD,
+				ROLES.INDIVIDUAL,
+			).required(),
+		}),
 		organizationName: Joi.string().max(256).optional(),
 	});
 	try {

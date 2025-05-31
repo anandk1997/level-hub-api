@@ -22,6 +22,8 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.Activities, { foreignKey: 'assigneeId', as: "assignee" });
       Users.hasMany(models.Activities, { foreignKey: 'assignedById', as: "assignedBy" });
       Users.hasMany(models.ActivityTemplates, { foreignKey: 'userId'});
+      Users.hasMany(models.UserAssociations, { foreignKey: 'primaryUserId', as: 'primaryUser' });
+      Users.hasMany(models.UserAssociations, { foreignKey: 'associatedUserId', as: 'associatedUser' });
     }
   }
   Users.init({
@@ -73,6 +75,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+		isPrimaryAccount: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+      defaultValue: false
+		},
     fullName: {
       type: DataTypes.VIRTUAL,
       get() {

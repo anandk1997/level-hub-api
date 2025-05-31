@@ -27,11 +27,10 @@ const { Op } = db.Sequelize;
 const saveLevelXP  = async (req, res, next) => {
   const { levelXP } = req.body;
   try {
-    const user = await fetchPrimaryUser(req.email, null, ['id', 'email']);
-    if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
+    const userId = req.userId;
 
     const [level] = await db.Levels.upsert({
-      userId: user.id,
+      userId,
       levelXP,
     }, {
       returning: true,
@@ -53,11 +52,10 @@ const saveLevelXP  = async (req, res, next) => {
  */
 const fetchLevelInfo = async (req, res, next) => {
   try {
-    const user = await fetchPrimaryUser(req.email, null, ['id', 'email']);
-    if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
+    const userId = req.userId;
     const levelInfo = await db.Levels.findOne({
       attributes: ['id', 'levelXP', 'currentXP'],
-      where: { userId: user.id },
+      where: { userId },
     });
     return res.response(levelInfo?.id ? LEVEL_FETCH_SUCCESS : LEVEL_NOT_SET, levelInfo, 200, undefined, !!levelInfo?.id);
   } catch (error) {

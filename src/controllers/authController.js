@@ -61,7 +61,7 @@ const signup = async (req, res, next) => {
       attributes: ['id'],
       where: { name: request.type }
     });
-    if (!role) { return res.response(ROLE_NOT_EXISTS, {}, 100); }
+    if (!role) { return res.response(ROLE_NOT_EXISTS, {}, 400); }
 
     const user = {
       firstName: request.firstName.trim(),
@@ -72,7 +72,8 @@ const signup = async (req, res, next) => {
       password,
       dob: request.dob,
       category: request.category,
-      roleId: role.id
+      roleId: role.id,
+			isPrimaryAccount: request?.source === 'self',
     };
 
     const result = await db.Users.create(user);
@@ -81,11 +82,11 @@ const signup = async (req, res, next) => {
     await db.UserConfig.create({
 			userId: result.id,
 			isVerified: false,
-			isPrimaryAccount: true,
-			registrationSource: 'self'
+			
+			registrationSource: request.source
 		});
     sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
-    return res.response(SIGNUP_SUCCESS);
+    return res.response(SIGNUP_SUCCESS, {}, 201);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }

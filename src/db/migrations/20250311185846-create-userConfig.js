@@ -24,11 +24,6 @@ module.exports = {
         allowNull: false,
         defaultValue: false
       },
-      isPrimaryAccount: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: false
-      },
       registrationSource: {
         type: Sequelize.ENUM,
         values: ['self', 'invite', 'subaccount'],

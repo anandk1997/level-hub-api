@@ -22,6 +22,8 @@ const {
  * @typedef {import('sequelize').Model} ActivityHistory
  * @typedef {import('sequelize').Model} ActivityTemplates
  * @typedef {import('sequelize').Model} Permissions
+ * @typedef {import('sequelize').Model} UserAssociations
+ * @typedef {import('./rolePermission.model').Model} RolePermissions
 */
 
 
@@ -38,6 +40,8 @@ const {
  * @property {ActivityHistory} ActivityHistory - ActivityHistory model
  * @property {ActivityTemplates} ActivityTemplates - ActivityTemplates model
  * @property {Permissions} Permissions - Permissions model
+ * @property {RolePermissions} RolePermissions - RolePermissions model
+ * @property {UserAssociations} UserAssociations - UserAssociations model
  */
 
 /** @type {DBModels} */

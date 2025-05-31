@@ -1,5 +1,6 @@
 'user strict';
 
+/** @type {import('joi')} */
 const Joi = require('joi').extend(require('@joi/date'));
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
 

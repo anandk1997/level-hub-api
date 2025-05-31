@@ -9,7 +9,9 @@
     "start": "nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
     "start:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js",
     "seed:generate": "sequelize-cli seed:generate --name seed-data",
-    "seed:apply": "sequelize-cli db:seed:all --config src/db/config/config.js",
+    "seed:apply": "sequelize-cli db:seed:all --config src/db/config/config.js --seeders-path src/db/seeders",
+    "seed:undo": "sequelize-cli db:seed:undo --config src/db/config/config.js --seeders-path src/db/seeders",
+    "seed:undo:all": "sequelize-cli db:seed:undo:all --config src/db/config/config.js --seeders-path src/db/seeders",
     "db:create": "sequelize-cli db:create --config src/db/config/config.js",
     "mg:status": "sequelize-cli db:migrate:status",
     "mg:generate": "sequelize-cli migration:generate --name init --config src/db/config/config.js --migrations-path src/db/migrations",
@@ -22,7 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "@joi/date": "^2.1.1",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
@@ -31,14 +33,14 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.10.1",
-    "pg": "^8.15.6",
+    "nodemailer": "^7.0.3",
+    "pg": "^8.16.0",
     "pg-hstore": "^2.3.4",
     "redis": "^4.7.0",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9",
-    "sequelize-cli": "^6.6.2"
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.3"
   }
 }

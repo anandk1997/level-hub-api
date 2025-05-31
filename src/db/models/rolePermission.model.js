@@ -13,13 +13,13 @@ const { Model } = require('sequelize');
  * @returns {import('sequelize').Model} - RolePermission model
  */
 module.exports = (sequelize, DataTypes) => {
-  class RolePermission extends Model {
+  class RolePermissions extends Model {
     static associate(models) {
-      RolePermission.belongsTo(models.Roles, { foreignKey: "roleId", as: 'role' });
-      RolePermission.belongsTo(models.Permissions, { foreignKey: "permissionId", as: 'permission' });
+      RolePermissions.belongsTo(models.Roles, { foreignKey: "roleId", as: 'role' });
+      RolePermissions.belongsTo(models.Permissions, { foreignKey: "permissionId", as: 'permission' });
     }
   }
-  RolePermission.init({
+  RolePermissions.init({
     roleId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -31,8 +31,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     timestamps: false,
     sequelize,
-    modelName: 'RolePermission',
-    tableName: 'rolePermission'
+    modelName: 'RolePermissions',
+    tableName: 'rolePermissions'
   });
-  return RolePermission;
+  return RolePermissions;
 };

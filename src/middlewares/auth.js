@@ -40,6 +40,13 @@ const checkToken = (req, res, next) => {
 	}
 };
 
+/**
+ * Generates an authorization token for the given user data.
+ *
+ * @async
+ * @param {Object} userData
+ * @param {string?} tokenTime
+ */
 const authorize = async(userData, tokenTime) => {
 	tokenTime = tokenTime || '6h';
 	let token = await sign(userData,
