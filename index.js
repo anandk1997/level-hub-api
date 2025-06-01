@@ -9,7 +9,7 @@ const corsOptions = require('./src/corsConfig.js');
 const { ErrorHandler, handleError, responseHandler } = require('./src/helpers');
 const { userUnrestricted, userRestricted } = require('./src/routes');
 
-function main() {
+// function main() {
     const app = express();
     app.use(helmet());
 
@@ -35,9 +35,18 @@ function main() {
         handleError(err, res);
     });
 
-    app.listen(PORT, () => {
-        console.log(`API server started on: ${PORT}`);
-    });
-};
+    if (require.main === module) {
+        app.listen(PORT, () => {
+            console.log(`API server started on: ${PORT}`);
+        });
+    }
 
-main();
+
+    // app.listen(PORT, () => {
+    //     console.log(`API server started on: ${PORT}`);
+    // });
+
+//     return app;
+// };
+// const mainApp = main();
+module.exports = app;
