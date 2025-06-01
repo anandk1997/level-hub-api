@@ -3,6 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
+const pg = require("pg"); 
+
 const basename = path.basename(__filename);
 const {
   DB_HOST,
