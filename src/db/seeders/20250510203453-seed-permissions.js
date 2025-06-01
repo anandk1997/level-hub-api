@@ -2,11 +2,12 @@
 
 const {
   PERMISSIONS: {
-    ACCOUNT_MANAGEMENT,
-    ACTIVITY_APPROVAL,
-    ACTIVITY_MANAGEMENT,
-    INVITE_USERS,
-    LEVEL_MANAGEMENT
+    ACCOUNT_MANAGE,
+    ACTIVITY_MANAGE,
+    ACTIVITY_APPROVE,
+    ACTIVITY_VIEW,
+    USER_INVITE,
+    LEVEL_MANAGE
   }
 } = require("../../constants");
 
@@ -14,11 +15,12 @@ const {
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.bulkInsert('permissions', [
-      { key: ACCOUNT_MANAGEMENT, createdAt: new Date(), updatedAt: new Date(), },
-      { key: ACTIVITY_MANAGEMENT, createdAt: new Date(), updatedAt: new Date(), },
-      { key: ACTIVITY_APPROVAL, createdAt: new Date(), updatedAt: new Date(), },
-      { key: LEVEL_MANAGEMENT, createdAt: new Date(), updatedAt: new Date(), },
-      { key: INVITE_USERS, createdAt: new Date(), updatedAt: new Date(), },
+      { key: ACCOUNT_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: ACTIVITY_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: ACTIVITY_APPROVE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: ACTIVITY_VIEW, createdAt: new Date(), updatedAt: new Date(), },
+      { key: LEVEL_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: USER_INVITE, createdAt: new Date(), updatedAt: new Date(), },
     ], {});
   },
 

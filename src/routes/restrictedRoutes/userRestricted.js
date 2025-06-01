@@ -25,11 +25,12 @@ const {
 } = require('../../middlewares');
 const {
   PERMISSIONS: {
-    ACCOUNT_MANAGEMENT,
-    ACTIVITY_APPROVAL,
-    ACTIVITY_MANAGEMENT,
-    INVITE_USERS,
-    LEVEL_MANAGEMENT,
+    ACCOUNT_MANAGE,
+    ACTIVITY_APPROVE,
+    ACTIVITY_MANAGE,
+    ACTIVITY_VIEW,
+    LEVEL_MANAGE,
+    USER_INVITE,
   }
 } = require('../../constants');
 
@@ -40,45 +41,44 @@ router.use(auth.checkToken);
 
 // LEVEL
 router.route("/level")
-  .all(checkPermssion(LEVEL_MANAGEMENT))
-  .post(levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
-  .get(levelCtrl.fetchLevelInfo);
+  .post(checkPermssion(LEVEL_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
+  .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
 router.route("/activity")
-  .post(checkPermssion(ACTIVITY_MANAGEMENT), activityValidation.saveActivityValidation, actCtrl.createActivity);
+  .post(checkPermssion(ACTIVITY_MANAGE), activityValidation.saveActivityValidation, actCtrl.createActivity);
 router.route("/activity/list")
-  .post(checkPermssion(ACTIVITY_MANAGEMENT),activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(checkPermssion(ACTIVITY_MANAGE),activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
-  .put(checkPermssion(ACTIVITY_APPROVAL), activityValidation.approveActivityValidation, actCtrl.approveActivity);
+  .put(checkPermssion(ACTIVITY_APPROVE), activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
-  .all(checkPermssion(ACTIVITY_MANAGEMENT))
+  .all(checkPermssion(ACTIVITY_MANAGE))
   .get(actCtrl.fetchActivityDetails)
   .delete(actCtrl.deleteActvity);
 
 // ACTIVITY TEMPLATE
 router.route("/template")
-  .all(checkPermssion(ACTIVITY_MANAGEMENT))
+  .all(checkPermssion(ACTIVITY_MANAGE))
   .get(templateValidation.fetchTemplatesValidation, templateCtrl.fetchActivityTemplates)
   .post(templateValidation.saveTemplateValidation, templateCtrl.saveActivityTemplate);
 router.route("/template/:id")
-  .all(checkPermssion(ACTIVITY_MANAGEMENT))
+  .all(checkPermssion(ACTIVITY_MANAGE))
   .get(templateCtrl.fetchActivityTemplateDetails)
   .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
-router.get("/report/activity", checkPermssion(ACTIVITY_MANAGEMENT), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
+router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
 
 
 // DASHBOARD
-router.get("/dashboard/monthly", checkPermssion(ACTIVITY_MANAGEMENT), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
-router.get("/dashboard/all", checkPermssion(ACTIVITY_MANAGEMENT), dashCtrl.fetchAllTimeActivities);
-router.get("/dashboard/today", checkPermssion(ACTIVITY_MANAGEMENT), dashCtrl.fetchTodaysActivities);
+router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
+router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchAllTimeActivities);
+router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchTodaysActivities);
 
 // USERS
-router.put("/password/change", checkPermssion(ACCOUNT_MANAGEMENT), userValidation.changePasswordValidation, userCtrl.changePassword);
+router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);
 router.route("/profile")
-  .all(checkPermssion(ACCOUNT_MANAGEMENT))
+  .all(checkPermssion(ACCOUNT_MANAGE))
   .get(userCtrl.fetchUserProfile)
   .put(userValidation.updateProfileValidation, userCtrl.updateUserProfile);
 

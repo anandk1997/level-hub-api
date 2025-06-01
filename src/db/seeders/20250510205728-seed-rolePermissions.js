@@ -8,6 +8,7 @@ module.exports = {
       { roleId: 9, permissionId: 2 },
       { roleId: 9, permissionId: 3 },
       { roleId: 9, permissionId: 4 },
+      { roleId: 9, permissionId: 5 },
     ], {});
   },
 
