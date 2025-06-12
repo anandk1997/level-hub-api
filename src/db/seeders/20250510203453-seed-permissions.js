@@ -7,7 +7,8 @@ const {
     ACTIVITY_APPROVE,
     ACTIVITY_VIEW,
     USER_INVITE,
-    LEVEL_MANAGE
+    LEVEL_MANAGE,
+    SUBACCOUNT_MANAGE,
   }
 } = require("../../constants");
 
@@ -21,6 +22,7 @@ module.exports = {
       { key: ACTIVITY_VIEW, createdAt: new Date(), updatedAt: new Date(), },
       { key: LEVEL_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
       { key: USER_INVITE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: SUBACCOUNT_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
     ], {});
   },
 

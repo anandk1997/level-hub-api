@@ -9,7 +9,7 @@ const {
   DASH_TODAY_STATS_FETCH_SUCCESS,
 } = require('../messages');
 
-const { Op, fn, col, where, literal } = db.Sequelize;
+const { Op, fn, col, where, literal, QueryTypes } = db.Sequelize;
 
 
 /**
@@ -29,8 +29,9 @@ const fetchMonthlyActivityHistory = async (req, res, next) => {
     if (dayjs().isBefore(dayjs(endDate))) {
       endDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
     }
+    // return res.json({ startDate, endDate });
 
-    const monthlyActivities = await db.ActivityHistory.findAll({
+    /* const monthlyActivities = await db.ActivityHistory.findAll({
       attributes: [
         [fn('DATE', col('approvalDate')), 'approvalDate'], 
         [fn('COUNT', col('id')), 'activityCount'],
@@ -44,7 +45,36 @@ const fetchMonthlyActivityHistory = async (req, res, next) => {
       },
       group: [fn('DATE', col('approvalDate'))],
       order: [['approvalDate', 'DESC']]
+    }); */
+
+    const rawQuery = `
+      SELECT
+        dates.day::date AS "approvalDate",
+        COALESCE(COUNT(ah.id), 0) AS "activityCount",
+        COALESCE(SUM(ah.xp), 0) AS "totalXP"
+      FROM
+        generate_series(
+          :startDate::date,
+          :endDate::date,
+          interval '1 day'
+        ) AS dates(day)
+      LEFT JOIN "activityHistory" ah
+        ON DATE(ah."approvalDate") = dates.day
+        AND ah."assigneeId" = :userId
+      GROUP BY dates.day
+      ORDER BY dates.day DESC;
+    `;
+
+    const monthlyActivities = await db.sequelize.query(rawQuery, {
+      replacements: {
+        startDate,
+        endDate,
+        userId,
+      },
+      type: QueryTypes.SELECT
     });
+
+
     
     return res.response(ACTIVITY_GRAPH_FETCH_SUCCESS, { monthlyActivities });
   } catch (error) {
