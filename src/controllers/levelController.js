@@ -57,7 +57,9 @@ const fetchLevelInfo = async (req, res, next) => {
       attributes: ['id', 'levelXP', 'currentXP'],
       where: { userId },
     });
-    levelInfo.dataValues.level = levelInfo?.currentXP && levelInfo?.levelXP ? Math.floor(levelInfo?.currentXP / levelInfo?.levelXP) + 1 : 1;
+    if (levelInfo?.dataValues) {
+      levelInfo.dataValues.level = levelInfo?.currentXP && levelInfo?.levelXP ? Math.floor(levelInfo?.currentXP / levelInfo?.levelXP) + 1 : 1;
+    }
     return res.response(levelInfo?.id ? LEVEL_FETCH_SUCCESS : LEVEL_NOT_SET, levelInfo, 200, undefined, !!levelInfo?.id);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
