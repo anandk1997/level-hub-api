@@ -13,7 +13,7 @@ module.exports = {
 	EMAIL_VERIFICATION_OTP: 'email_verification',
 	PASS_RESET_OTP: 'password_reset',
 	APP_NAME: "Level Hub",
-	SMTP: {
+	/* SMTP: {
 		host: 'mail.lovestoriez.com',
 		port: 465,
 		secure: true, // true for 465, false for other ports
@@ -22,6 +22,16 @@ module.exports = {
 		fromEmail: 'noreply@lovestoriez.com',
 		fromAlias: 'LevelHub Admin',
 		adminEmail: ['kanishkclerisy@gmail.com'],
+	}, */
+	SMTP: {
+		host: 'smtp.gmail.com',
+		port: 465,
+		secure: true, // true for 465, false for other ports
+		user: 'dev.kanishk.gupta@gmail.com',
+		pass: 'djxt vvdz xpgc acmj',
+		fromEmail: 'dev.kanishk.gupta@gmail.com',
+		fromAlias: 'LevelHub Admin',
+		adminEmail: ['dev.kanishk.gupta@gmail.com'],
 	},
 	OTP_VALIDITY: 30, // In minutes
 };

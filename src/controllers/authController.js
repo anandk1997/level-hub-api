@@ -82,7 +82,6 @@ const signup = async (req, res, next) => {
     await db.UserConfig.create({
 			userId: result.id,
 			isVerified: false,
-			
 			registrationSource: request.source
 		});
     sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
