@@ -84,7 +84,7 @@ const signup = async (req, res, next) => {
 			isVerified: false,
 			registrationSource: request.source
 		});
-    sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
+    await sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
     return res.response(SIGNUP_SUCCESS, {}, 201);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
@@ -135,7 +135,7 @@ const verifyRegistrationOtp = async (req, res, next) => {
 		await db.UserConfig.update({ isVerified: true }, { where: { userId: user.id } });
 		await db.UserOtps.destroy({ where: { id: user.dataValues.UserOtps.id } });
 
-		sendRegistrationMail(user);
+		await sendRegistrationMail(user);
 		return res.response(VERIFY_SUCCESS);
 
 	} catch (error) {
@@ -161,7 +161,7 @@ const resendRegistrationOtp = async (req, res, next) => {
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
 		const { otp } = await saveOTP(user.id, EMAIL_VERIFICATION_OTP);
 
-		sendRegistrationOTP({ fullName: user.fullName, email: user.email, otp });
+		await sendRegistrationOTP({ fullName: user.fullName, email: user.email, otp });
 		return res.response(RESENT_OTP_SUCCESS);
 
 	} catch (error) {
@@ -244,7 +244,7 @@ const forgotPassword = async (req, res, next) => {
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
 
 		const { otp } = await saveOTP(user.id, PASS_RESET_OTP);
-		sendForgotPasswordOTP({ fullName: user.fullName, email: user.email, otp });
+		await sendForgotPasswordOTP({ fullName: user.fullName, email: user.email, otp });
 		return res.response(RESET_CODE_SUCCESS);
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });

@@ -23,7 +23,7 @@ module.exports = {
 		fromAlias: 'LevelHub Admin',
 		adminEmail: ['kanishkclerisy@gmail.com'],
 	}, */
-	/* SMTP: {
+	SMTP: {
 		host: 'smtp.gmail.com',
 		port: 465,
 		secure: true, // true for 465, false for other ports
@@ -32,8 +32,8 @@ module.exports = {
 		fromEmail: 'dev.kanishk.gupta@gmail.com',
 		fromAlias: 'LevelHub Admin',
 		adminEmail: ['dev.kanishk.gupta@gmail.com'],
-	}, */
-	SMTP: {
+	},
+	/* SMTP: {
 		host: 'smtp.gmail.com',
 		port: 465,
 		secure: true, // true for 465, false for other ports
@@ -42,6 +42,6 @@ module.exports = {
 		fromEmail: 'anandslk1997@gmail.com',
 		fromAlias: 'LevelHub Admin',
 		adminEmail: ['anandslk1997@gmail.com'],
-	},
+	}, */
 	OTP_VALIDITY: 30, // In minutes
 };
