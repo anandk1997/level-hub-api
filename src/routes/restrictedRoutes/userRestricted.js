@@ -10,6 +10,7 @@ const {
   dashCtrl,
   templateCtrl,
   userCtrl,
+  childCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
@@ -31,6 +32,7 @@ const {
     ACTIVITY_VIEW,
     LEVEL_MANAGE,
     USER_INVITE,
+    SUBACCOUNT_MANAGE,
   }
 } = require('../../constants');
 
@@ -81,5 +83,10 @@ router.route("/profile")
   .all(checkPermssion(ACCOUNT_MANAGE))
   .get(userCtrl.fetchUserProfile)
   .put(userValidation.updateProfileValidation, userCtrl.updateUserProfile);
+
+// LEVEL
+router.post("/child/create", checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount);
+  // .post(checkPermssion(SUBACCOUNT_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
+  // .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
 
 module.exports = router;

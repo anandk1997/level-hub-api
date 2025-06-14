@@ -14,8 +14,13 @@ const {
 	PASSWORD_UPDATE_SUCCESS,
 	FETCH_PROFILE_SUCCESS,
 	UPDATE_PROFILE_SUCCESS,
+	USERNAME_EXISTS,
+	USERNAME_EXISTS_EXCEPTION,
+	ROLE_NOT_EXISTS,
+	ROLE_NOT_EXISTS_EXCEPTION,
+	CHILD_CREATE_SUCCESS,
 } = require('../messages');
-const Auth = require('../middlewares/auth');
+
 
 /**
  * API to fetch user profile
@@ -78,7 +83,7 @@ const updateUserProfile = async (req, res, next) => {
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-const changePassword = async (req, res, next) => {1
+const changePassword = async (req, res, next) => {
 	try {
 		const { oldPassword, newPassword } = req.body, userId = req.userId;
 		const user = await db.Users.findOne({

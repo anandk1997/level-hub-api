@@ -5,6 +5,7 @@ const reportCtrl = require('./reportsController');
 const dashCtrl = require('./dashboardController');
 const templateCtrl = require('./activityTemplateController');
 const userCtrl = require('./userController');
+const childCtrl = require('./childController');
 
 module.exports = {
   authCtrl,
@@ -14,4 +15,5 @@ module.exports = {
   dashCtrl,
   templateCtrl,
   userCtrl,
+  childCtrl
 };

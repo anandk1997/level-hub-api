@@ -13,6 +13,7 @@ module.exports = {
 	EMAIL_VERIFICATION_OTP: 'email_verification',
 	PASS_RESET_OTP: 'password_reset',
 	APP_NAME: "Level Hub",
+	MAX_CHILD_LIMIT: 10,
 	/* SMTP: {
 		host: 'mail.lovestoriez.com',
 		port: 465,

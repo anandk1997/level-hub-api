@@ -20,11 +20,13 @@ module.exports = {
       },
       email: {
         type: Sequelize.STRING(128),
-        allowNull: false,
+        allowNull: true,
+        unique: true
       },
       username: {
         type: Sequelize.STRING(100),
         allowNull: true,
+        unique: true
       },
       phone: {
         type: Sequelize.STRING(20),

@@ -8,14 +8,14 @@ const { Op } = db.Sequelize;
  * 
  * @param {string} value
  * @param {string} field
- * @param {string} tutorId 
- * @param {boolean} next 
+ * @param {string?} userId
+ * @param {boolean?} next
  */
-const checkIfUserExists = async (value, field, tutorId = null, returnResult = false) => {
+const checkIfUserExists = async (value, field, userId = null, returnResult = false) => {
 	try {
 		let where = { [field]: value };
-		if (tutorId) {
-			where = { ...where, _id: { $ne: tutorId } };
+		if (userId) {
+			where = { ...where, _id: { $ne: userId } };
 		}
 		const result = await db.Users.findOne({ where });
 		if (returnResult) { return result; }
