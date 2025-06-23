@@ -30,7 +30,7 @@ const {
     ACTIVITY_APPROVE,
     ACTIVITY_MANAGE,
     ACTIVITY_VIEW,
-    LEVEL_MANAGE,
+    TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
   }
@@ -43,7 +43,7 @@ router.use(auth.checkToken);
 
 // LEVEL
 router.route("/level")
-  .post(checkPermssion(LEVEL_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
+  .post(checkPermssion(TARGET_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveTargetXP)
   .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
@@ -84,8 +84,12 @@ router.route("/profile")
   .get(userCtrl.fetchUserProfile)
   .put(userValidation.updateProfileValidation, userCtrl.updateUserProfile);
 
-// LEVEL
-router.post("/child/create", checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount);
+// CHILD MANAGEMENT
+router.route("/child")
+  .post(checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount)
+  .put(checkPermssion(SUBACCOUNT_MANAGE), userValidation.updateChildValidation, childCtrl.updateChild)
+  .get(checkPermssion(SUBACCOUNT_MANAGE), childCtrl.fetchChildren);
+// router.post("/child/update", checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount);
   // .post(checkPermssion(SUBACCOUNT_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
   // .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
 

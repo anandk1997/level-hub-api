@@ -15,7 +15,8 @@ const {
 } = require("../../../config");
 
 /**
- * @typedef {import('sequelize').Model} Levels
+ * @typedef {import('sequelize').Model} Targets
+ * @typedef {import('sequelize').Model} UserProgress
  * @typedef {import('sequelize').Model} Users
  * @typedef {import('sequelize').Model} Roles
  * @typedef {import('sequelize').Model} UserOtps
@@ -33,11 +34,12 @@ const {
  * @typedef {Object} DBModels
  * @property {Sequelize.Sequelize} sequelize - Sequelize instance
  * @property {typeof Sequelize} Sequelize - Sequelize library
+ * @property {Targets} Targets - Targets model
+ * @property {UserProgress} UserProgress - UserProgress model
  * @property {Users} Users - Users model
  * @property {Roles} Roles - Roles model
  * @property {UserOtps} UserOtps - UserOTPs model
  * @property {UserConfig} UserConfig - UserConfig model
- * @property {Levels} Levels - Levels model
  * @property {Activities} Activities - Activities model
  * @property {ActivityHistory} ActivityHistory - ActivityHistory model
  * @property {ActivityTemplates} ActivityTemplates - ActivityTemplates model

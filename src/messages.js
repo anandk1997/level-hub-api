@@ -45,6 +45,7 @@ module.exports = {
     ACTIVITY_LIST_FETCH_SUCCESS: 'Activity list fetched successfully.',
     ACTIVITY_FETCH_SUCCESS: 'Activity details fetched successfully.',
     LEVEL_NOT_SET: 'Your target level is not set. Please set your target XP level to get most benefits of LevelHub.',
+    LEVEL_NOT_SET_EXCEPTION: 'LevelUnsetException.',
     LEVEL_FETCH_SUCCESS: 'Level information fetched successfully.',
     ACTIVITY_DOESNT_EXISTS: "Activity doesn't exist!",
     ACTIVITIES_DOESNT_EXISTS: "Some activities aren't assigned for today or don't exist!",
@@ -69,6 +70,10 @@ module.exports = {
     FORBIDDEN: 'Forbidden access.',
     FORBIDDEN_EXCEPTION: 'ForbiddenException',
     CHILD_CREATE_SUCCESS: 'Child created successfully!',
+    CHILD_UPDATE_SUCCESS: 'Child updated successfully!',
     CHILD_MAX_LIMIT_EXCEED: 'Child accounts have reached maximum limit.',
     CHILD_MAX_LIMIT_EXCEED_EXCEPTION: 'ChildMaxLimitException',
+    CHILDREN_FETCH_SUCCESS: 'Children list fetched successfully.',
+    UNAUTHORIZED_SUBACCOUNT_ACCESS: 'Unauthorized subaccount access.',
+    UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION: 'UnauthorizedSubaccountException.',
 }

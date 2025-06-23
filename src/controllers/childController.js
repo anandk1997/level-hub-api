@@ -14,8 +14,12 @@ const {
 	CHILD_CREATE_SUCCESS,
   CHILD_MAX_LIMIT_EXCEED,
   CHILD_MAX_LIMIT_EXCEED_EXCEPTION,
+	CHILDREN_FETCH_SUCCESS,
+	CHILD_UPDATE_SUCCESS,
+	UNAUTHORIZED_SUBACCOUNT_ACCESS,
+	UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION,
 } = require('../messages');
-const { checkIfUserExists } = require('../helpers/userHelper');
+const { checkIfUserExists, fetchPrimaryUser, checkIfUserAssociated } = require('../helpers/userHelper');
 const {
 	ROLES: {
 		CHILD
@@ -92,8 +96,95 @@ const createChildAccount = async (req, res, next) => {
 			}, {
 				transaction: t
 			});
+			await db.UserProgress.create({ userId: userResult.id, currentXP: 0 }, { transaction: t });
+
 		});
     return res.response(CHILD_CREATE_SUCCESS, {}, 201);
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * API to fetch all children
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchChildren = async (req, res, next) => {
+	try {
+		const userId = req.userId, userInfo = req.user;
+    const primaryUserId = await fetchPrimaryUser(userId, userInfo);
+
+		const target = await db.Targets.findOne({
+      attributes: ['id', 'targetXP'],
+      where: { userId: primaryUserId },
+    });
+		
+		const { count, rows } = await db.Users.findAndCountAll({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'roleId'],
+			include: [{
+				model: db.UserAssociations,
+      	as: 'associatedUser',
+				where: {
+					primaryUserId: userId,
+					relationType: PARENT_CHILD
+				},
+				subQuery: false,
+				required: true
+			}, {
+				model: db.UserProgress,
+				attributes: ['id', 'userId', 'currentXP'],
+				subQuery: false
+			}],
+			order: [['firstName', 'DESC']],
+			subQuery: false
+		});
+		const children = rows.map(child => {
+			const childInfo = {
+				...child.dataValues,
+				targetXP: target?.targetXP,
+        currentXP: child?.UserProgress?.currentXP,
+			};
+			delete childInfo.associatedUser;
+			delete childInfo.UserProgress;
+			return childInfo;
+		});
+    return res.response(CHILDREN_FETCH_SUCCESS, { children, count });
+		
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * API to update child information
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const updateChild = async (req, res, next) => {
+	try {
+		const request = req.body, userId = req.userId;
+		const isAssociated = await checkIfUserAssociated(userId, request?.childId, PARENT_CHILD);
+		if (!isAssociated) { return res.response(UNAUTHORIZED_SUBACCOUNT_ACCESS, {}, 401, UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION, false); }
+
+		const user = {
+			firstName: request.firstName.trim(),
+			lastName: request.lastName ? request.lastName.trim() : null,
+			email: request?.email ? request?.email?.trim() : null,
+			phone: request?.phone?.trim(),
+			gender: request?.gender?.trim(),
+			dob: request?.dob,
+		};
+		const result = await db.Users.update(
+			user,
+			{ where: { id: request.childId } }
+		);
+
+    return res.response(CHILD_UPDATE_SUCCESS, {}, 200);
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });
 	}
@@ -102,4 +193,6 @@ const createChildAccount = async (req, res, next) => {
 
 module.exports = {
 	createChildAccount,
+	fetchChildren,
+	updateChild
 };

@@ -28,9 +28,12 @@ const checkToken = (req, res, next) => {
 				} else {
 					req.accessToken = token;
 					req.userId = decoded.id;
-					req.email = decoded.email;
-					req.username = decoded.username;
-					req.role = decoded.role;
+					req.user = {
+						userId: decoded.id,
+						email: decoded.email,
+						username: decoded.username,
+						role: decoded.role,
+					};
 					next();
 				}
 			});

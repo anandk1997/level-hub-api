@@ -62,7 +62,6 @@ const changePasswordValidation = async (req, res, next) => {
 const childAccountValidation = async (req, res, next) => {
 	/** @type {import('joi').ObjectSchema} */
 	const schema = Joi.object({
-		childId: Joi.number().integer().optional(),
 		firstName: Joi.string().min(1).max(128).required(),
 		lastName: Joi.string().max(128).allow('').optional(),
 		email: Joi.string().max(128).email({ minDomainSegments: 2 }).optional(),
@@ -87,8 +86,34 @@ const childAccountValidation = async (req, res, next) => {
 	}
 };
 
+/**
+ * Update child account validation
+ * 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const updateChildValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+	const schema = Joi.object({
+		childId: Joi.number().integer().positive().required(),
+		firstName: Joi.string().min(1).max(128).required(),
+		lastName: Joi.string().max(128).allow('').optional(),
+		phone: Joi.string().max(20).optional(),
+		gender: Joi.string().valid('male', 'female', 'others').optional(),
+		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
+	});
+	try {
+		await schema.validateAsync(req.body);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
+
 module.exports = {
 	updateProfileValidation,
 	changePasswordValidation,
 	childAccountValidation,
+	updateChildValidation,
 };

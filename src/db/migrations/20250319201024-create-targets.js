@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('levels', {
+    await queryInterface.createTable('targets', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
@@ -20,17 +20,11 @@ module.exports = {
         },
         onDelete: 'CASCADE'
       },
-      levelXP: {
+      targetXP: {
         type: Sequelize.INTEGER,
         allowNull: false,
         defaultValue: 1000,
         comment: "The amount of Experience Points required to level up"
-      },
-      currentXP: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-        comment: "The current XP of the user"
       },
       createdAt: {
         allowNull: false,
@@ -46,6 +40,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('levels');
+    await queryInterface.dropTable('targets');
   }
 };
