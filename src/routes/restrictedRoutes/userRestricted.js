@@ -89,8 +89,7 @@ router.route("/child")
   .post(checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount)
   .put(checkPermssion(SUBACCOUNT_MANAGE), userValidation.updateChildValidation, childCtrl.updateChild)
   .get(checkPermssion(SUBACCOUNT_MANAGE), childCtrl.fetchChildren);
-// router.post("/child/update", checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount);
-  // .post(checkPermssion(SUBACCOUNT_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveLevelXP)
-  // .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
+router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
+router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
 
 module.exports = router;

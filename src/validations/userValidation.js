@@ -111,9 +111,35 @@ const updateChildValidation = async (req, res, next) => {
 	}
 };
 
+/**
+ * Reset child's password schema validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const resetChildPasswordValidation = async (req, res, next) => {
+	const schema = Joi.object({
+		childId: Joi.number().integer().positive().required(),
+		newPassword: Joi.string().min(8).max(128).required().label('New Password'),
+		confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required()
+				.label('Confirm Password').options({
+					messages: { 'any.only': '{{#label}} does not match' }
+				}),
+	});
+	try {
+		await schema.validateAsync(req.body);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
+
+
 module.exports = {
 	updateProfileValidation,
 	changePasswordValidation,
 	childAccountValidation,
 	updateChildValidation,
+	resetChildPasswordValidation,
 };

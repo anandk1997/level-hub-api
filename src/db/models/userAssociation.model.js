@@ -17,8 +17,8 @@ const { USER_ASSOCIATIONS: { PARENT_CHILD, ORGANIZATION_USER, GYM_COACH } } = re
 module.exports = (sequelize, DataTypes) => {
   class UserAssociations extends Model {
     static associate(models) {
-      UserAssociations.belongsTo(models.Users, { foreignKey: "primaryUserId", as: 'primaryUser' });
-      UserAssociations.belongsTo(models.Users, { foreignKey: "associatedUserId", as: 'associatedUser' });
+      UserAssociations.belongsTo(models.Users, { foreignKey: "primaryUserId", as: 'primaryUser', onDelete: 'CASCADE' });
+      UserAssociations.belongsTo(models.Users, { foreignKey: "associatedUserId", as: 'associatedUser', onDelete: 'CASCADE' });
     }
   }
   UserAssociations.init({
@@ -26,11 +26,21 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       primaryKey: true,
       allowNull: false,
+      references: {
+				model: 'users',
+				key: 'id'
+			},
+			onDelete: 'CASCADE'
     },
     associatedUserId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       allowNull: false,
+      references: {
+				model: 'users',
+				key: 'id'
+			},
+			onDelete: 'CASCADE'
     },
     relationType: {
       type: DataTypes.ENUM,

@@ -18,6 +18,8 @@ const {
 	CHILD_UPDATE_SUCCESS,
 	UNAUTHORIZED_SUBACCOUNT_ACCESS,
 	UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION,
+	PASSWORD_RESET_SUCCESS,
+	CHILD_DELETED_SUCCESS,
 } = require('../messages');
 const { checkIfUserExists, fetchPrimaryUser, checkIfUserAssociated } = require('../helpers/userHelper');
 const {
@@ -33,7 +35,6 @@ const {
 } = require('../../config');
 
 const { sequelize, } = db;
-// const { Op, fn, col, where, literal } = db.Sequelize;
 
 
 /**
@@ -190,9 +191,53 @@ const updateChild = async (req, res, next) => {
 	}
 };
 
+/**
+ * API to reset child's password
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const resetChildPassword = async (req, res, next) => {
+	try {
+		const request = req.body, userId = req.userId;
+		const isAssociated = await checkIfUserAssociated(userId, request?.childId, PARENT_CHILD);
+		if (!isAssociated) { return res.response(UNAUTHORIZED_SUBACCOUNT_ACCESS, {}, 401, UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION, false); }
+
+    const passHash = await hashSync(request?.newPassword, SALT_ROUNDS);
+		await db.Users.update({ password: passHash }, { where: { id: request?.childId } });
+    return res.response(PASSWORD_RESET_SUCCESS);
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * API to delete child
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const deleteChild = async (req, res, next) => {
+	try {
+		const childId = parseInt(req.params.id), userId = req.userId;
+		const isAssociated = await checkIfUserAssociated(userId, childId, PARENT_CHILD);
+		if (!isAssociated) { return res.response(UNAUTHORIZED_SUBACCOUNT_ACCESS, {}, 401, UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION, false); }
+
+    const result = await db.Users.destroy({ where: { id: childId } });
+
+    return res.response(CHILD_DELETED_SUCCESS, result);
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
 
 module.exports = {
 	createChildAccount,
 	fetchChildren,
-	updateChild
+	updateChild,
+	resetChildPassword,
+	deleteChild,
 };

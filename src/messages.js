@@ -76,4 +76,7 @@ module.exports = {
     CHILDREN_FETCH_SUCCESS: 'Children list fetched successfully.',
     UNAUTHORIZED_SUBACCOUNT_ACCESS: 'Unauthorized subaccount access.',
     UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION: 'UnauthorizedSubaccountException.',
+    PASSWORD_RESET_SUCCESS: "Password reset successfully.",
+    CHILD_DELETED_SUCCESS: 'Child deleted successfully.',
+
 }
