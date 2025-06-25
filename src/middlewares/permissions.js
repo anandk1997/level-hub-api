@@ -20,11 +20,16 @@ const {
  * @example app.use('/admin', checkPermssion('ADMIN_ACCESS'));
  */
 const checkPermssion = (permissionKey) => {
+  /**
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
   return async (req, res, next) => {
     try {
       const userId = req.userId;
       const userInfo = await db.Users.findOne({
-        attributes: ['id', 'roleId', 'isPrimaryAccount'],
+        attributes: ['id', 'email', 'firstName', 'lastName', 'fullName', 'roleId', 'isPrimaryAccount'],
         where: { id: userId },
         include: {
           model: db.Roles,
@@ -44,6 +49,14 @@ const checkPermssion = (permissionKey) => {
       if (!userInfo?.Role?.permissions?.length) {
         return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false);
       }
+      req.user = {
+        ...req.user,
+        fullName: userInfo?.fullName,
+        email: userInfo?.email,
+        isPrimaryAccount: userInfo?.isPrimaryAccount,
+        roleId: userInfo?.roleId,
+        role: userInfo?.Role?.name,
+      };
       next();
     } catch (error) {
       return next({ error, statusCode: 500, message: error?.message });

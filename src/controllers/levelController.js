@@ -11,7 +11,8 @@ const {
 	USER_DOESNT_EXISTS_EXCEPTION,
   LEVEL_SAVED_SUCCESS,
   LEVEL_FETCH_SUCCESS,
-  LEVEL_NOT_SET
+  LEVEL_NOT_SET,
+  LEVEL_NOT_SET_EXCEPTION
 } = require('../messages.js');
 
 const { fetchPrimaryUser } = userHelper;
@@ -24,12 +25,12 @@ const { Op } = db.Sequelize;
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-const saveLevelXP  = async (req, res, next) => {
+const saveTargetXP  = async (req, res, next) => {
   const { levelXP } = req.body;
   try {
     const userId = req.userId;
-
-    const [level] = await db.Levels.upsert({
+    // return res.json({ levelXP, userId });
+    const [level] = await db.Targets.upsert({
       userId,
       levelXP,
     }, {
@@ -52,21 +53,31 @@ const saveLevelXP  = async (req, res, next) => {
  */
 const fetchLevelInfo = async (req, res, next) => {
   try {
-    const userId = req.userId;
-    const levelInfo = await db.Levels.findOne({
-      attributes: ['id', 'levelXP', 'currentXP'],
+    const userId = req.userId, userInfo = req.user;
+    const primaryUserId = await fetchPrimaryUser(userId, userInfo);
+    // return res.json({ userInfo, primaryUserId, userId });
+    const target = await db.Targets.findOne({
+      attributes: ['id', 'targetXP'],
+      where: { userId: primaryUserId },
+    });
+    if (!target?.id) { return res.response(LEVEL_NOT_SET, {}, 200, LEVEL_NOT_SET_EXCEPTION, false) }
+    const progress = await db.UserProgress.findOne({
+      attributes: ['id', 'currentXP'],
       where: { userId },
     });
-    if (levelInfo?.dataValues) {
-      levelInfo.dataValues.level = levelInfo?.currentXP && levelInfo?.levelXP ? Math.floor(levelInfo?.currentXP / levelInfo?.levelXP) + 1 : 1;
+    let levelInfo = {
+      id: target?.id,
+      targetXP: target?.targetXP,
+      currentXP: progress?.currentXP || 0,
+      level: target?.targetXP && progress?.levelXP ? Math.floor(progress?.currentXP / target?.targetXP) + 1 : 1
     }
-    return res.response(levelInfo?.id ? LEVEL_FETCH_SUCCESS : LEVEL_NOT_SET, levelInfo, 200, undefined, !!levelInfo?.id);
+    return res.response(LEVEL_FETCH_SUCCESS, levelInfo, 200);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
 };
 
 module.exports = {
-  saveLevelXP,
+  saveTargetXP,
   fetchLevelInfo,
 }

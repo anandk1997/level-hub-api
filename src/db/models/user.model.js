@@ -18,7 +18,8 @@ module.exports = (sequelize, DataTypes) => {
       Users.belongsTo(models.Roles, { foreignKey: 'roleId' });
       Users.hasOne(models.UserConfig, { foreignKey: 'userId' });
       Users.hasMany(models.UserOtps, { foreignKey: 'userId' });
-      Users.hasOne(models.Levels, { foreignKey: 'userId' });
+      Users.hasOne(models.Targets, { foreignKey: 'userId' });
+      Users.hasOne(models.UserProgress, { foreignKey: 'userId' });
       Users.hasMany(models.Activities, { foreignKey: 'assigneeId', as: "assignee" });
       Users.hasMany(models.Activities, { foreignKey: 'assignedById', as: "assignedBy" });
       Users.hasMany(models.ActivityTemplates, { foreignKey: 'userId'});

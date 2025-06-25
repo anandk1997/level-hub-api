@@ -113,7 +113,7 @@ const verifyRegistrationOtp = async (req, res, next) => {
 		const user = await db.Users.findOne({
 			attributes: ['id', 'email', 'firstName', 'lastName'],
 			where: { email: request.email },
-			include: {
+			include: [{
 				model: db.UserOtps,
 				attributes: ['id', 'otp', 'otpType', 'updatedAt'],
 				where: {
@@ -123,9 +123,11 @@ const verifyRegistrationOtp = async (req, res, next) => {
 				required: true,
 				separate: true, // Fetch associated records in a separate query
 				limit: 1, // Limit to 1 record
-			},
+			}, {
+				model: db.UserConfig,
+				where: { isVerified: false }
+			}],
 		});
-
 		if (!user?.UserOtps?.length) { return res.response(INVALID_OTP, {}, 401, INVALID_OTP_EXCEPTION, false); }
 		user.dataValues.UserOtps = user?.UserOtps[0];
 		const valid = await compareSync(request.otp, user.dataValues.UserOtps.otp);
@@ -133,6 +135,7 @@ const verifyRegistrationOtp = async (req, res, next) => {
 		if (!valid) { return res.response(INVALID_OTP, {}, 401, INVALID_OTP_EXCEPTION, false); }
 		
 		await db.UserConfig.update({ isVerified: true }, { where: { userId: user.id } });
+		await db.UserProgress.create({ userId: user.id, currentXP: 0 });
 		await db.UserOtps.destroy({ where: { id: user.dataValues.UserOtps.id } });
 
 		await sendRegistrationMail(user);

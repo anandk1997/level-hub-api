@@ -238,7 +238,7 @@ const approveActivity = async (req, res, next) => {
       }));
       const totalXP = activities.reduce((total, activity) => total + activity.xp, 0);
       const result = await db.ActivityHistory.bulkCreate(histories, { transaction: t });   
-      return await db.Levels.increment('currentXP', {
+      return await db.UserProgress.increment('currentXP', {
         by: totalXP, where: { userId: activities[0].assigneeId }
       }, { transaction: t });
     });
