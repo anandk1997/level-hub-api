@@ -22,7 +22,7 @@ const {
 } = require("../../validations");
 const {
   auth,
-  permissions: { checkPermssion }
+  permissions: { checkPermssion, checkAssociatedUser }
 } = require('../../middlewares');
 const {
   PERMISSIONS: {
@@ -44,7 +44,7 @@ router.use(auth.checkToken);
 // LEVEL
 router.route("/level")
   .post(checkPermssion(TARGET_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveTargetXP)
-  .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
+  .get(checkPermssion(ACTIVITY_VIEW), checkAssociatedUser, levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
 router.route("/activity")
@@ -91,5 +91,7 @@ router.route("/child")
   .get(checkPermssion(SUBACCOUNT_MANAGE), childCtrl.fetchChildren);
 router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
+
+router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
 
 module.exports = router;

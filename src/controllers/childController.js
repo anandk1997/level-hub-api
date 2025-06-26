@@ -116,7 +116,7 @@ const createChildAccount = async (req, res, next) => {
 const fetchChildren = async (req, res, next) => {
 	try {
 		const userId = req.userId, userInfo = req.user;
-    const primaryUserId = await fetchPrimaryUser(userId, userInfo);
+    const primaryUserId = await fetchPrimaryUser(userId, userInfo, PARENT_CHILD);
 
 		const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],

@@ -1,22 +1,15 @@
 'use strict';
 
-const { 
-  COMMON_ERR_MSG,
-} = require('../../config.js');
-
 const { db } = require('../db');
 const { userHelper } = require('../helpers');
 const {
-	USER_DOESNT_EXISTS,
-	USER_DOESNT_EXISTS_EXCEPTION,
   LEVEL_SAVED_SUCCESS,
   LEVEL_FETCH_SUCCESS,
   LEVEL_NOT_SET,
   LEVEL_NOT_SET_EXCEPTION
 } = require('../messages.js');
 
-const { fetchPrimaryUser } = userHelper;
-const { Op } = db.Sequelize;
+const { fetchPrimaryUser, fetchRelationBasedOnRole } = userHelper;
 
 /**
  * Create/update the level XP for the user
@@ -29,7 +22,6 @@ const saveTargetXP  = async (req, res, next) => {
   const { levelXP } = req.body;
   try {
     const userId = req.userId;
-    // return res.json({ levelXP, userId });
     const [level] = await db.Targets.upsert({
       userId,
       levelXP,
@@ -53,9 +45,15 @@ const saveTargetXP  = async (req, res, next) => {
  */
 const fetchLevelInfo = async (req, res, next) => {
   try {
-    const userId = req.userId, userInfo = req.user;
-    const primaryUserId = await fetchPrimaryUser(userId, userInfo);
-    // return res.json({ userInfo, primaryUserId, userId });
+    let userId = req.userId, userInfo = req.user;
+    const associatedUserId = req.query?.userId ? parseInt(req.query?.userId) : null;
+    const relationType = fetchRelationBasedOnRole(userInfo?.role);
+
+    if (associatedUserId) {
+      userId = associatedUserId;
+      userInfo = { userId: associatedUserId };
+    }
+    const primaryUserId = await fetchPrimaryUser(userId, userInfo, relationType);
     const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],
       where: { userId: primaryUserId },

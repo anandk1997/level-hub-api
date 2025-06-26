@@ -5,6 +5,11 @@ const { hashSync, compareSync } = require('bcrypt');
 const {
 	SALT_ROUNDS
 } = require('../../config');
+const {
+	USER_ASSOCIATIONS: {
+		PARENT_CHILD,
+	}
+} = require('../constants');
 const { db } = require('../db');
 const {
 	USER_DOESNT_EXISTS,
@@ -19,6 +24,7 @@ const {
 	ROLE_NOT_EXISTS,
 	ROLE_NOT_EXISTS_EXCEPTION,
 	CHILD_CREATE_SUCCESS,
+	USER_ASSOCIATED_SUCCESS,
 } = require('../messages');
 
 
@@ -111,25 +117,35 @@ const changePassword = async (req, res, next) => {
 };
 
 /**
- * Check if email exists
- * 
- * @param {*} email 
- * @param {*} userId 
- * @param {*} next 
+ * API to fetch all associated users
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const check_if_email_exist = async (email, userId, next, returnResult) => {
+const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		let where = { email };
-		if (userId) {
-			where = { ...where, id: { [Op.not]: userId } }
-		}
-		const result = await User.findOne({ where }); // , logging: console.log
-		if (returnResult) { return result; }
-		return (result) ? true : false;
+		const userId = req.userId, releation = req?.params?.relation || PARENT_CHILD;
+		const associatedUsers = await db.Users.findAll({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
+			include: [{
+				model: db.UserAssociations,
+      	as: 'associatedUser',
+				attributes: [],
+				where: {
+					primaryUserId: userId,
+					relationType: releation
+				},
+				subQuery: false,
+			}],
+			order: [['firstName', 'ASC']],
+		});
+		return res.response(USER_ASSOCIATED_SUCCESS, { associatedUsers });
 	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
+		return next({ error, statusCode: 500, message: error?.message });
+	}
 };
+
 
 
 /**
@@ -491,4 +507,5 @@ module.exports = {
 	fetchUserProfile,
 	updateUserProfile,
 	changePassword,
+	fetchAssociatedUsers,
 };

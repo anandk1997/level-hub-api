@@ -1,7 +1,18 @@
 'user strict';
 
 const { db } = require('../db');
-const { Op } = db.Sequelize;
+const {
+	ROLES: {
+		PARENT_OWNER,
+		COACH_OWNER,
+		GYM_OWNER
+	},
+	USER_ASSOCIATIONS: {
+		PARENT_CHILD,
+		ORGANIZATION_USER,
+		GYM_COACH
+	}
+} = require('../constants');
 
 /**
  * Check if user exists by given field
@@ -53,19 +64,13 @@ const fetchUser = async (email, username, attributes) => {
  * @param {Object} userInfo 
  * @returns 
  */
-const fetchPrimaryUser = async (userId, userInfo) => {
+const fetchPrimaryUser = async (userId, userInfo, relationType) => {
 	try {
 		if (userInfo?.isPrimaryAccount) { return userId; }
-		return userId;
-		return await db.Users.findOne({
-			attributes,
-			where,
-			include: {
-				model: db.UserConfig,
-				where: { isPrimaryAccount: true },
-				required: true
-			}
+		const userAssociation = await db.UserAssociations.findOne({
+			where: { associatedUserId: userId, relationType },
 		});
+		return userAssociation?.primaryUserId;
 	} catch (error) {
 		throw error;
 	}   
@@ -81,16 +86,30 @@ const fetchPrimaryUser = async (userId, userInfo) => {
  */
 const checkIfUserAssociated = async (primaryUserId, associatedUserId, relationType) => {
 	try {
-		const associatiation = await db.UserAssociations.findOne({
-			where: {
-				primaryUserId,
-				associatedUserId,
-				relationType
-			}
-		});
+		const where = {
+			primaryUserId,
+			associatedUserId
+		};
+		if (relationType) { where.relationType = relationType }
+		const associatiation = await db.UserAssociations.findOne({ where });
 		return associatiation?.primaryUserId ?  true : false;
 	} catch (error) {
 		throw error;
+	}
+};
+
+/**
+ * Returns the relation type based on the provided user role.
+ *
+ * @param {string} role - The role of the user (e.g., PARENT_OWNER, COACH_OWNER, GYM_OWNER).
+ * @returns {string} The corresponding relation type (e.g., PARENT_CHILD, ORGANIZATION_USER).
+ */
+const fetchRelationBasedOnRole = (role) => {
+	switch (role) {
+		case PARENT_OWNER: return PARENT_CHILD;
+		case COACH_OWNER: return ORGANIZATION_USER;
+		case GYM_OWNER: return ORGANIZATION_USER;
+		default: return PARENT_CHILD;
 	}
 };
 
@@ -98,5 +117,6 @@ module.exports = {
 	checkIfUserExists,
 	fetchUser,
 	fetchPrimaryUser,
-	checkIfUserAssociated
+	checkIfUserAssociated,
+	fetchRelationBasedOnRole
 };

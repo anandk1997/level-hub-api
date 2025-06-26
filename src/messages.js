@@ -78,5 +78,5 @@ module.exports = {
     UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION: 'UnauthorizedSubaccountException.',
     PASSWORD_RESET_SUCCESS: "Password reset successfully.",
     CHILD_DELETED_SUCCESS: 'Child deleted successfully.',
-
+    USER_ASSOCIATED_SUCCESS: "User associated successfully.",
 }

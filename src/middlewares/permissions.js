@@ -2,6 +2,7 @@
 
 
 const { db } = require('../db');
+const { checkIfUserAssociated } = require('../helpers/userHelper');
 const {
   FORBIDDEN,
   FORBIDDEN_EXCEPTION,
@@ -65,6 +66,29 @@ const checkPermssion = (permissionKey) => {
   
 };
 
+/**
+ * Check if urlParam userId is assoicated to the logged-in user
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const checkAssociatedUser = async (req, res, next) => {
+  try {
+    const primaryUserId = req.userId, userInfo = req.user;
+    let associatedUserId = req.query?.userId;
+    if (!associatedUserId) { return next(); }
+    if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+    associatedUserId = parseInt(associatedUserId);
+    const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
+    if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+    next();
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 module.exports = {
 	checkPermssion,
+  checkAssociatedUser,
 };

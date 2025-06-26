@@ -29,7 +29,6 @@ const fetchMonthlyActivityHistory = async (req, res, next) => {
     if (dayjs().isBefore(dayjs(endDate))) {
       endDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
     }
-    // return res.json({ startDate, endDate });
 
     /* const monthlyActivities = await db.ActivityHistory.findAll({
       attributes: [

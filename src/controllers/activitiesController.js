@@ -48,7 +48,6 @@ const createActivity  = async (req, res, next) => {
   try {
     const user = await fetchUser(req.email, null, ['id', 'email']);
     if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 400, USER_DOESNT_EXISTS_EXCEPTION, false); }
-    // return res.json({ user, request: req.body, email: req.email, username: req.username, role: req.role });
 
     const result = await db.Activities.upsert({
       id: activityId,
