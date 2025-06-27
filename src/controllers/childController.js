@@ -80,6 +80,7 @@ const createChildAccount = async (req, res, next) => {
 				dob: request?.dob,
 				roleId: role.id,
 				isPrimaryAccount: false,
+				ownerId: userId,
 			};
    		const userResult = await db.Users.create(user, { transaction: t });
 
@@ -116,7 +117,8 @@ const createChildAccount = async (req, res, next) => {
 const fetchChildren = async (req, res, next) => {
 	try {
 		const userId = req.userId, userInfo = req.user;
-    const primaryUserId = await fetchPrimaryUser(userId, userInfo, PARENT_CHILD);
+    // const primaryUserId = await fetchPrimaryUser(userId, userInfo, PARENT_CHILD);
+    const primaryUserId = userId;
 
 		const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],

@@ -59,10 +59,10 @@ const fetchUser = async (email, username, attributes) => {
 
 /**
  * Fetches the primary user ID
- * 
- * @param {number} userId 
- * @param {Object} userInfo 
- * @returns 
+ *
+ * @param {number} userId
+ * @param {Object} userInfo
+ * @returns {number}
  */
 const fetchPrimaryUser = async (userId, userInfo, relationType) => {
 	try {
@@ -99,10 +99,10 @@ const checkIfUserAssociated = async (primaryUserId, associatedUserId, relationTy
 };
 
 /**
- * Returns the relation type based on the provided user role.
+ * Returns the relation type based on the provided user role
  *
- * @param {string} role - The role of the user (e.g., PARENT_OWNER, COACH_OWNER, GYM_OWNER).
- * @returns {string} The corresponding relation type (e.g., PARENT_CHILD, ORGANIZATION_USER).
+ * @param {string} role - The role of the user (e.g., PARENT_OWNER, COACH_OWNER, GYM_OWNER)
+ * @returns {string} The corresponding relation type (e.g., PARENT_CHILD, ORGANIZATION_USER)
  */
 const fetchRelationBasedOnRole = (role) => {
 	switch (role) {
@@ -113,10 +113,33 @@ const fetchRelationBasedOnRole = (role) => {
 	}
 };
 
+
+/**
+ * Fetches the owner ID or user details for a given user
+ *
+ * @param {number} userId
+ * @param {Object} userInfo
+ * @param {boolean?} returnIdOnly
+ * @returns {Object | number}
+ * @throws {Error} If an error occurs during the database query.
+ */
+const fetchOwner = async (userId, userInfo, returnIdOnly = true) => {
+	try {
+		if (userInfo?.isPrimaryAccount) { return userId; }
+		const user = await db.Users.findByPk(userId, {
+			attributes: ['id', 'ownerId']
+		});
+		return returnIdOnly ? user?.ownerId : user;
+	} catch (error) {
+		throw error;
+	}
+};
+
 module.exports = {
 	checkIfUserExists,
 	fetchUser,
 	fetchPrimaryUser,
 	checkIfUserAssociated,
-	fetchRelationBasedOnRole
+	fetchRelationBasedOnRole,
+	fetchOwner
 };

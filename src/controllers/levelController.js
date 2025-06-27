@@ -9,7 +9,7 @@ const {
   LEVEL_NOT_SET_EXCEPTION
 } = require('../messages.js');
 
-const { fetchPrimaryUser, fetchRelationBasedOnRole } = userHelper;
+const { fetchPrimaryUser, fetchOwner } = userHelper;
 
 /**
  * Create/update the level XP for the user
@@ -47,13 +47,13 @@ const fetchLevelInfo = async (req, res, next) => {
   try {
     let userId = req.userId, userInfo = req.user;
     const associatedUserId = req.query?.userId ? parseInt(req.query?.userId) : null;
-    const relationType = fetchRelationBasedOnRole(userInfo?.role);
 
     if (associatedUserId) {
       userId = associatedUserId;
       userInfo = { userId: associatedUserId };
     }
-    const primaryUserId = await fetchPrimaryUser(userId, userInfo, relationType);
+    const primaryUserId = await fetchOwner(userId, userInfo);
+    // return res.json({ primaryUserId, associatedUserId, userId, userInfo })
     const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],
       where: { userId: primaryUserId },

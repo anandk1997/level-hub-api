@@ -62,7 +62,17 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false
-      },      
+      },
+      ownerId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+          // onDelete: 'CASCADE',
+          onDelete: 'SET NULL'
+        }
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
