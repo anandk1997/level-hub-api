@@ -19,12 +19,12 @@ const { fetchPrimaryUser, fetchOwner } = userHelper;
  * @param {import('express').NextFunction} next
  */
 const saveTargetXP  = async (req, res, next) => {
-  const { levelXP } = req.body;
+  const { targetXP } = req.body;
   try {
     const userId = req.userId;
     const [level] = await db.Targets.upsert({
       userId,
-      levelXP,
+      targetXP,
     }, {
       returning: true,
     });
@@ -67,7 +67,7 @@ const fetchLevelInfo = async (req, res, next) => {
       id: target?.id,
       targetXP: target?.targetXP,
       currentXP: progress?.currentXP || 0,
-      level: target?.targetXP && progress?.levelXP ? Math.floor(progress?.currentXP / target?.targetXP) + 1 : 1
+      level: target?.targetXP && progress?.currentXP ? Math.floor(progress?.currentXP / target?.targetXP) : 0
     }
     return res.response(LEVEL_FETCH_SUCCESS, levelInfo, 200);
   } catch (error) {

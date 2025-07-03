@@ -46,8 +46,8 @@ const createActivity  = async (req, res, next) => {
     isSelfAssignment
   } = req?.body;
   try {
-    const user = await fetchUser(req.email, null, ['id', 'email']);
-    if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 400, USER_DOESNT_EXISTS_EXCEPTION, false); }
+    const userId = parseInt(req.userId);
+    // return res.json({ userId, user, request: req.body, email: req.email, username: req.username, role: req.role });
 
     const result = await db.Activities.upsert({
       id: activityId,
@@ -59,8 +59,8 @@ const createActivity  = async (req, res, next) => {
       assignedDays: isRecurring ? assignedDays : null,
       startDate,
       endDate: isRecurring ? endDate : startDate,
-      assigneeId: user?.id,
-      assignedById: isSelfAssignment ? user?.id : user?.id,
+      assigneeId: userId,
+      assignedById: isSelfAssignment ? userId : userId,
     });
     return res.response(activityId ? ACTIVITY_UPDATED_SUCCESS : ACTIVITY_CREATED_SUCCESS);
   } catch (error) {
