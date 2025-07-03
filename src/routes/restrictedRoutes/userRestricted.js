@@ -43,7 +43,7 @@ router.use(auth.checkToken);
 
 // LEVEL
 router.route("/level")
-  .post(checkPermssion(TARGET_MANAGE), levelValidation.levelXPValidation, levelCtrl.saveTargetXP)
+  .post(checkPermssion(TARGET_MANAGE), levelValidation.targetXPValidation, levelCtrl.saveTargetXP)
   .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
