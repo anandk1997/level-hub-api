@@ -53,11 +53,16 @@ const saveActivityValidation = async (req, res, next) => {
       'date.min': ACT_END_DATE_MIN_VALIDATION,
       'date.max': ACT_END_DATE_MAX_VALIDATION
     }),
-    isSelfAssignment: Joi.boolean().required()
+    isSelfAssignment: Joi.boolean().required(),
+    assigneeId: Joi.when('isSelfAssignment', {
+      is: false,
+      then: Joi.number().integer().positive().required(),
+      otherwise: Joi.number().integer().positive().optional(),
+    })
 	});
 	try {
-		const a = await schema.val
-		next();
+		await schema.validateAsync(req.body);
+    next();
 	} catch (error) {
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}

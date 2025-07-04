@@ -66,25 +66,32 @@ const checkPermssion = (permissionKey) => {
   
 };
 
+
 /**
- * Check if urlParam userId is assoicated to the logged-in user
+ * Check if given userId is assoicated to the logged-in user
  *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
+ * @param {string?} type
+ * @param {string?} key
  */
-const checkAssociatedUser = async (req, res, next) => {
-  try {
-    const primaryUserId = req.userId, userInfo = req.user;
-    let associatedUserId = req.query?.userId;
-    if (!associatedUserId) { return next(); }
-    if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
-    associatedUserId = parseInt(associatedUserId);
-    const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
-    if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
-    next();
-  } catch (error) {
-    return next({ error, statusCode: 500, message: error?.message });
+const checkAssociatedUser = (type = 'query', key = 'userId') => {
+  /**
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
+  return async (req, res, next) => {
+    try {
+      const primaryUserId = parseInt(req.userId), userInfo = req.user;
+      let associatedUserId = req[type][key] ? parseInt(req[type][key]) : req[type][key];
+      if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
+      if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+      associatedUserId = parseInt(associatedUserId);
+      const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
+      if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+      next();
+    } catch (error) {
+      return next({ error, statusCode: 500, message: error?.message });
+    }
   }
 };
 

@@ -125,17 +125,18 @@ const changePassword = async (req, res, next) => {
  */
 const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		const userId = req.userId, releation = req?.params?.relation || PARENT_CHILD;
+		const userId = req.userId, relation = req?.params?.relation;
+		let where = { primaryUserId: userId };
+		if (relation) {
+			where = { ...where, relationType: relation };
+		}
 		const associatedUsers = await db.Users.findAll({
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
 			include: [{
 				model: db.UserAssociations,
       	as: 'associatedUser',
 				attributes: [],
-				where: {
-					primaryUserId: userId,
-					relationType: releation
-				},
+				where,
 				subQuery: false,
 			}],
 			order: [['firstName', 'ASC']],

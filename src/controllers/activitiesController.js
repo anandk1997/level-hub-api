@@ -22,7 +22,6 @@ const {
   ACTIVITY_DELETED_SUCCESS,
 } = require('../messages.js');
 
-const { fetchUser } = userHelper;
 const { Op, fn, col, where, literal } = db.Sequelize;
 
 /**
@@ -43,11 +42,11 @@ const createActivity  = async (req, res, next) => {
     assignedDays,
     startDate,
     endDate,
-    isSelfAssignment
+    isSelfAssignment,
+    assigneeId,
   } = req?.body;
   try {
     const userId = parseInt(req.userId);
-    // return res.json({ userId, user, request: req.body, email: req.email, username: req.username, role: req.role });
 
     const result = await db.Activities.upsert({
       id: activityId,
@@ -59,8 +58,8 @@ const createActivity  = async (req, res, next) => {
       assignedDays: isRecurring ? assignedDays : null,
       startDate,
       endDate: isRecurring ? endDate : startDate,
-      assigneeId: userId,
-      assignedById: isSelfAssignment ? userId : userId,
+      assigneeId: isSelfAssignment ? userId : assigneeId,
+      assignedById: userId,
     });
     return res.response(activityId ? ACTIVITY_UPDATED_SUCCESS : ACTIVITY_CREATED_SUCCESS);
   } catch (error) {
@@ -79,10 +78,9 @@ const createActivity  = async (req, res, next) => {
  * @param {import('express').NextFunction} next
  */
 const fetchActivities = async (req, res, next) => {
-  
   try {
     let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
-    const userId = parseInt(req.userId)
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : parseInt(req.userId);
     const pageOffset = pageSize * (page - 1);
     const filterStartDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
     const filterEndDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
@@ -93,7 +91,6 @@ const fetchActivities = async (req, res, next) => {
         { startDate: { [Op.lte]: filterEndDate } },
         { endDate:   { [Op.gte]: filterStartDate } },
       ],
-
     };
 
     let includeClause = {

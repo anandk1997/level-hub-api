@@ -44,13 +44,13 @@ router.use(auth.checkToken);
 // LEVEL
 router.route("/level")
   .post(checkPermssion(TARGET_MANAGE), levelValidation.targetXPValidation, levelCtrl.saveTargetXP)
-  .get(checkPermssion(ACTIVITY_VIEW), checkAssociatedUser, levelCtrl.fetchLevelInfo);
+  .get(checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
 router.route("/activity")
-  .post(checkPermssion(ACTIVITY_MANAGE), activityValidation.saveActivityValidation, actCtrl.createActivity);
+  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.saveActivityValidation, actCtrl.createActivity);
 router.route("/activity/list")
-  .post(checkPermssion(ACTIVITY_MANAGE),activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('query', 'userId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
   .put(checkPermssion(ACTIVITY_APPROVE), activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
