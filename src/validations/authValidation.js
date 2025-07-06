@@ -24,7 +24,6 @@ const signupValidation = async (req, res, next) => {
 		password: Joi.string().min(8).max(128).required(),
 		gender: Joi.string().valid('male', 'female', 'others').optional(),
 		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
-		category: Joi.string().optional(),
 		source: Joi.string().valid('self', 'invite').required(),
 		type: Joi.when('source', {
 			is: 'self',
