@@ -53,7 +53,7 @@ const fetchLevelInfo = async (req, res, next) => {
       userInfo = { userId: associatedUserId };
     }
     const primaryUserId = await fetchOwner(userId, userInfo);
-    // return res.json({ primaryUserId, associatedUserId, userId, userInfo })
+
     const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],
       where: { userId: primaryUserId },

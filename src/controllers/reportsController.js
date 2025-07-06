@@ -18,7 +18,9 @@ const { QueryTypes } = db.Sequelize;
 */
 const getMonthlyActivityReport = async (req, res, next) => {
   try {
-    const userId = parseInt(req.userId), reportMonth = req.query.date;
+    const reportMonth = req.query.date;
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
+
     const startDate = reportMonth ? dayjs(reportMonth).startOf('month').format("YYYY-MM-DD") : dayjs().startOf('month').format("YYYY-MM-DD");
     let endDate = reportMonth ? dayjs(reportMonth).endOf('month').format("YYYY-MM-DD") : dayjs().endOf('month').format("YYYY-MM-DD");
 

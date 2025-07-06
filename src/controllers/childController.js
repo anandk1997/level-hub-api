@@ -149,6 +149,7 @@ const fetchChildren = async (req, res, next) => {
 				...child.dataValues,
 				targetXP: target?.targetXP,
         currentXP: child?.UserProgress?.currentXP,
+	      level: target?.targetXP && child?.UserProgress?.currentXP ? Math.floor(child?.UserProgress?.currentXP / target?.targetXP) : 0
 			};
 			delete childInfo.associatedUser;
 			delete childInfo.UserProgress;

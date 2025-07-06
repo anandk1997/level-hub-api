@@ -50,7 +50,7 @@ router.route("/level")
 router.route("/activity")
   .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.saveActivityValidation, actCtrl.createActivity);
 router.route("/activity/list")
-  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('query', 'userId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
   .put(checkPermssion(ACTIVITY_APPROVE), activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
@@ -69,13 +69,13 @@ router.route("/template/:id")
   .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
-router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
+router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
 
 
 // DASHBOARD
-router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
-router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchAllTimeActivities);
-router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchTodaysActivities);
+router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
+router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchAllTimeActivities);
+router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchTodaysActivities);
 
 // USERS
 router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);

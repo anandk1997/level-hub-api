@@ -5,13 +5,10 @@ const dayjs = require('dayjs');
 const { db } = require('../db');
 const { userHelper } = require('../helpers');
 const {
-	USER_DOESNT_EXISTS,
-	USER_DOESNT_EXISTS_EXCEPTION,
   ACTIVITY_CREATED_SUCCESS,
   ACTIVITY_UPDATED_SUCCESS,
   ACTIVITY_FETCH_SUCCESS,
   ACTIVITY_LIST_FETCH_SUCCESS,
-  ACTIVITY_DOESNT_EXISTS,
   ACTIVITY_DOESNT_EXISTS_EXCEPTION,
   ACTIVITY_APPROVED_SUCCESS,
   ACTIVITY_APPROVAL_EXISTS,
@@ -21,7 +18,7 @@ const {
   ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION,
   ACTIVITY_DELETED_SUCCESS,
   ACTIVITY_DELETED_FAILURE,
-} = require('../messages.js');
+} = require('../messages');
 
 const { Op, fn, col, where, literal } = db.Sequelize;
 
@@ -80,14 +77,14 @@ const createActivity  = async (req, res, next) => {
  */
 const fetchActivities = async (req, res, next) => {
   try {
-    let { startDate, endDate, page = 1, pageSize = 10, status = 'all' } = req.body;
-    const userId = req.query?.userId ? parseInt(req.query?.userId) : parseInt(req.userId);
+    let { startDate, endDate, page = 1, pageSize = 10, status = 'all', assigneeId } = req.body;
+    assigneeId = assigneeId ? parseInt(assigneeId) : parseInt(req.userId);
     const pageOffset = pageSize * (page - 1);
     const filterStartDate = startDate ? dayjs(startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
     const filterEndDate = endDate ? dayjs(endDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD");
 
     let whereClause = {
-      assigneeId: userId,
+      assigneeId,
       [Op.and]: [
         { startDate: { [Op.lte]: filterEndDate } },
         { endDate:   { [Op.gte]: filterStartDate } },
@@ -102,7 +99,7 @@ const fetchActivities = async (req, res, next) => {
       on: {
         [Op.and]: [
           where(col('activityHistory.activityId'), '=', col('Activities.id')),
-          where(col('activityHistory.assigneeId'), '=', userId),
+          where(col('activityHistory.assigneeId'), '=', assigneeId),
           literal(`DATE("activityHistory"."approvalDate") BETWEEN '${filterStartDate}' AND '${filterEndDate}'`)
         ]
       },

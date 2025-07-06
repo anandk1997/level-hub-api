@@ -82,9 +82,9 @@ const fetchActivitiesValidation = async (req, res, next) => {
     startDate: joiExtended.date().format('YYYY-MM-DD').raw().optional(),
     endDate: joiExtended.date().format('YYYY-MM-DD').raw().optional().min(Joi.ref('startDate')),
     status: Joi.string().valid('completed', 'notCompleted', 'all').optional(),
-    assigneeId: Joi.string().optional(),
     page: Joi.number().integer().strict().min(1).optional(),
     pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
+    assigneeId: Joi.number().integer().positive().optional(),
   });
   try {
     await schema.validateAsync(req.body);
