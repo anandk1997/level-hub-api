@@ -53,11 +53,16 @@ const saveActivityValidation = async (req, res, next) => {
       'date.min': ACT_END_DATE_MIN_VALIDATION,
       'date.max': ACT_END_DATE_MAX_VALIDATION
     }),
-    isSelfAssignment: Joi.boolean().required()
+    isSelfAssignment: Joi.boolean().required(),
+    assigneeId: Joi.when('isSelfAssignment', {
+      is: false,
+      then: Joi.number().integer().positive().required(),
+      otherwise: Joi.number().integer().positive().optional(),
+    })
 	});
 	try {
-		const a = await schema.val
-		next();
+		await schema.validateAsync(req.body);
+    next();
 	} catch (error) {
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
@@ -77,9 +82,9 @@ const fetchActivitiesValidation = async (req, res, next) => {
     startDate: joiExtended.date().format('YYYY-MM-DD').raw().optional(),
     endDate: joiExtended.date().format('YYYY-MM-DD').raw().optional().min(Joi.ref('startDate')),
     status: Joi.string().valid('completed', 'notCompleted', 'all').optional(),
-    assigneeId: Joi.string().optional(),
     page: Joi.number().integer().strict().min(1).optional(),
     pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
+    assigneeId: Joi.number().integer().positive().optional(),
   });
   try {
     await schema.validateAsync(req.body);

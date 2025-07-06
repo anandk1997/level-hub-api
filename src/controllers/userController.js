@@ -5,6 +5,14 @@ const { hashSync, compareSync } = require('bcrypt');
 const {
 	SALT_ROUNDS
 } = require('../../config');
+const {
+	USER_ASSOCIATIONS: {
+		PARENT_CHILD,
+	},
+	ROLES: {
+		PARENT_OWNER
+	}
+} = require('../constants');
 const { db } = require('../db');
 const {
 	USER_DOESNT_EXISTS,
@@ -19,7 +27,9 @@ const {
 	ROLE_NOT_EXISTS,
 	ROLE_NOT_EXISTS_EXCEPTION,
 	CHILD_CREATE_SUCCESS,
+	USER_ASSOCIATED_SUCCESS,
 } = require('../messages');
+const { userHelper } = require('../helpers');
 
 
 /**
@@ -35,6 +45,10 @@ const fetchUserProfile = async (req, res, next) => {
 		const result = await db.Users.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'fullName'],
 			where: { id: userId },
+			include: {
+				model: db.Roles,
+				attributes: ['id', 'name']
+			}
 		});
 		return res.response(FETCH_PROFILE_SUCCESS, { profile: result });
 	} catch (error) {
@@ -111,25 +125,39 @@ const changePassword = async (req, res, next) => {
 };
 
 /**
- * Check if email exists
- * 
- * @param {*} email 
- * @param {*} userId 
- * @param {*} next 
+ * API to fetch all associated users
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const check_if_email_exist = async (email, userId, next, returnResult) => {
+const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		let where = { email };
-		if (userId) {
-			where = { ...where, id: { [Op.not]: userId } }
+		const userId = req.userId, relation = req?.params?.relation, userInfo = req.user;
+		let currentUser;
+		if (userInfo.role === PARENT_OWNER) {
+			currentUser = {
+				id: userInfo.userId,
+				email: userInfo.email,
+				fullName: userInfo.fullName,
+				username: userInfo.username,
+				firstName: userInfo.firstName,
+				lastName: userInfo.lastName,
+			};
 		}
-		const result = await User.findOne({ where }); // , logging: console.log
-		if (returnResult) { return result; }
-		return (result) ? true : false;
+		let associatedUsers = await userHelper.fetchUsersAssociated(userId, relation);
+		if (currentUser?.id) {
+			associatedUsers = [
+				currentUser,
+				...associatedUsers
+			];
+		}
+		return res.response(USER_ASSOCIATED_SUCCESS, { associatedUsers });
 	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
+		return next({ error, statusCode: 500, message: error?.message });
+	}
 };
+
 
 
 /**
@@ -491,4 +519,5 @@ module.exports = {
 	fetchUserProfile,
 	updateUserProfile,
 	changePassword,
+	fetchAssociatedUsers,
 };

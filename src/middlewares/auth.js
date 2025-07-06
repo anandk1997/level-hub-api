@@ -8,7 +8,13 @@ const {
 	ACCESS_DENIED
 } = require('../messages');
 
-
+/**
+ * Check if request have a valid access token
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 const checkToken = (req, res, next) => {
 	req.header_sub_domain = (req.headers['x-sub-domain'] !== undefined) ? req.headers['x-sub-domain'] : '';
 	
@@ -27,7 +33,7 @@ const checkToken = (req, res, next) => {
 					return res.response(INVALID_TOKEN, {}, 401, INVALID_TOKEN_EXCEPTION, false);
 				} else {
 					req.accessToken = token;
-					req.userId = decoded.id;
+					req.userId = parseInt(decoded.id);
 					req.user = {
 						userId: decoded.id,
 						email: decoded.email,

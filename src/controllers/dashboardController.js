@@ -21,15 +21,15 @@ const { Op, fn, col, where, literal, QueryTypes } = db.Sequelize;
  */
 const fetchMonthlyActivityHistory = async (req, res, next) => {
   try {
-    const userId = parseInt(req.userId);
     const { date = dayjs().startOf('month').format("YYYY-MM-DD") } = req.query;
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
+
     const startDate = dayjs(date).startOf('month').format("YYYY-MM-DD HH:mm:ss");
     let endDate = dayjs(date).endOf('month').format("YYYY-MM-DD HH:mm:ss");
 
     if (dayjs().isBefore(dayjs(endDate))) {
       endDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
     }
-    // return res.json({ startDate, endDate });
 
     /* const monthlyActivities = await db.ActivityHistory.findAll({
       attributes: [
@@ -62,7 +62,7 @@ const fetchMonthlyActivityHistory = async (req, res, next) => {
         ON DATE(ah."approvalDate") = dates.day
         AND ah."assigneeId" = :userId
       GROUP BY dates.day
-      ORDER BY dates.day DESC;
+      ORDER BY dates.day ASC;
     `;
 
     const monthlyActivities = await db.sequelize.query(rawQuery, {
@@ -91,7 +91,7 @@ const fetchMonthlyActivityHistory = async (req, res, next) => {
  */
 const fetchAllTimeActivities = async (req, res, next) => {
   try {
-    const userId = parseInt(req.userId);
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
     const completedResult = await db.ActivityHistory.findOne({
       attributes: [
         [fn('COUNT', col('id')), 'activityCount'],
@@ -117,7 +117,7 @@ const fetchAllTimeActivities = async (req, res, next) => {
  */
 const fetchTodaysActivities = async (req, res, next) => {
   try {
-    const userId = parseInt(req.userId);
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
     const currentDate = dayjs().format("YYYY-MM-DD"), currentDay = dayjs().format('dddd').toLowerCase();
     const assignedStats = await db.Activities.findOne({
       attributes: [

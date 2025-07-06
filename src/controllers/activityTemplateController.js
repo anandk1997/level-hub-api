@@ -9,7 +9,7 @@ const {
   ACTIVITY_TEMPLATE_DELETED_SUCCESS,
 } = require('../messages.js');
 
-const { Op, fn, col, where, literal } = db.Sequelize;
+const { Op } = db.Sequelize;
 
 /**
  * Create or update an activity
@@ -57,7 +57,8 @@ const saveActivityTemplate  = async (req, res, next) => {
 const fetchActivityTemplates = async (req, res, next) => {
   try {
     let { page = 1, pageSize = 10, search } = req.query;
-    const userId = parseInt(req.userId);
+    const userId = req?.user?.ownerId || req.userId;
+
     page = parseInt(page);
     pageSize = parseInt(pageSize);
     const pageOffset = pageSize * (page - 1);
@@ -93,7 +94,13 @@ const fetchActivityTemplates = async (req, res, next) => {
 const fetchActivityTemplateDetails = async (req, res, next) => {
   try {
     const activityId = parseInt(req.params.id);
-    const activity = await db.ActivityTemplates.findByPk(activityId);
+    const userId = req?.user?.ownerId || req.userId;
+    const activity = await db.ActivityTemplates.findAll({ 
+      where: {
+        id: activityId,
+        userId
+      }
+     });
     return res.response(ACTIVITY_TEMPLATE_DETAIL_FETCH_SUCCESS, { activity }, 200, undefined, !!activity?.length);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
@@ -109,9 +116,10 @@ const fetchActivityTemplateDetails = async (req, res, next) => {
  */
 const deleteActivityTemplate = async (req, res, next) => {
   try {
-    const activityId = parseInt(req.params.id);
-    const result = await db.ActivityTemplates.destroy({ where: { id: activityId } });
-    return res.response(ACTIVITY_TEMPLATE_DELETED_SUCCESS, undefined, result ? 200 : 404);
+    const activityId = parseInt(req.params.id), userId = req.userId, userInfo = req.user;
+    const ownerId = userInfo?.ownerId || userId;
+    const result = await db.ActivityTemplates.destroy({ where: { id: activityId, userId: ownerId } });
+    return res.response(ACTIVITY_TEMPLATE_DELETED_SUCCESS, result, result ? 200 : 404);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }

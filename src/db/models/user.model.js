@@ -25,30 +25,31 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.ActivityTemplates, { foreignKey: 'userId'});
       Users.hasMany(models.UserAssociations, { foreignKey: 'primaryUserId', as: 'primaryUser' });
       Users.hasMany(models.UserAssociations, { foreignKey: 'associatedUserId', as: 'associatedUser' });
+      Users.belongsTo(models.Users, { foreignKey: 'ownerId', as: 'owner' });
+      Users.hasMany(models.Users, { foreignKey: 'ownerId', as: 'subUsers' });
     }
   }
   Users.init({
     firstName: {
       type: DataTypes.STRING(128),
       allowNull: false,
-      trim: true,
     },
     lastName: {
       type: DataTypes.STRING(128),
-      allowNull: false,
-      trim: true,
+      allowNull: true,
     },
     email: {
       type: DataTypes.STRING(128),
       allowNull: true,
       unique: true,
-      trim: true,
+      validate: {
+        isEmail: true,
+      },
     },
     username: {
       type: DataTypes.STRING(100),
       allowNull: true,
       unique: true,
-      trim: true,
     },
     phone: {
       type: DataTypes.STRING(20),
@@ -75,11 +76,25 @@ module.exports = (sequelize, DataTypes) => {
     roleId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+				model: 'roles',
+				key: 'id'
+			},
     },
 		isPrimaryAccount: {
 			type: DataTypes.BOOLEAN,
 			allowNull: false,
       defaultValue: false
+		},
+		ownerId: {
+			type: DataTypes.INTEGER,
+			allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id',
+        // onDelete: 'CASCADE',
+        onDelete: 'SET NULL'
+      }
 		},
     fullName: {
       type: DataTypes.VIRTUAL,

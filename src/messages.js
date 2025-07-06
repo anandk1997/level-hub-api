@@ -62,6 +62,7 @@ module.exports = {
     ACTIVITY_TEMPLATE_DETAIL_FETCH_SUCCESS: 'Activity template details fetched successfully.',
     ACTIVITY_TEMPLATE_DELETED_SUCCESS: 'Activity template deleted successfully.',
     ACTIVITY_DELETED_SUCCESS: 'Activity deleted successfully.',
+    ACTIVITY_DELETED_FAILURE: 'Activity deleted failed.',
     REPORT_FETCH_SUCCESS: 'Montly activity report fetched successfully.',
     DASH_ALL_STATS_FETCH_SUCCESS: 'All time activity stats fetched successfully.',
     DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
@@ -78,5 +79,5 @@ module.exports = {
     UNAUTHORIZED_SUBACCOUNT_ACCESS_EXCEPTION: 'UnauthorizedSubaccountException',
     PASSWORD_RESET_SUCCESS: "Password reset successfully.",
     CHILD_DELETED_SUCCESS: 'Child deleted successfully.',
-
+    USER_ASSOCIATED_SUCCESS: "User associated successfully.",
 }

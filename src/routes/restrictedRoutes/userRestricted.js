@@ -22,7 +22,7 @@ const {
 } = require("../../validations");
 const {
   auth,
-  permissions: { checkPermssion }
+  permissions: { checkPermssion, checkAssociatedUser }
 } = require('../../middlewares');
 const {
   PERMISSIONS: {
@@ -44,13 +44,13 @@ router.use(auth.checkToken);
 // LEVEL
 router.route("/level")
   .post(checkPermssion(TARGET_MANAGE), levelValidation.targetXPValidation, levelCtrl.saveTargetXP)
-  .get(checkPermssion(ACTIVITY_VIEW), levelCtrl.fetchLevelInfo);
+  .get(checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), levelCtrl.fetchLevelInfo);
 
 // ACTIVITIES
 router.route("/activity")
-  .post(checkPermssion(ACTIVITY_MANAGE), activityValidation.saveActivityValidation, actCtrl.createActivity);
+  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.saveActivityValidation, actCtrl.createActivity);
 router.route("/activity/list")
-  .post(checkPermssion(ACTIVITY_MANAGE),activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
   .put(checkPermssion(ACTIVITY_APPROVE), activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
@@ -69,13 +69,13 @@ router.route("/template/:id")
   .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
-router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
+router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
 
 
 // DASHBOARD
-router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
-router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchAllTimeActivities);
-router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchTodaysActivities);
+router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
+router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchAllTimeActivities);
+router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchTodaysActivities);
 
 // USERS
 router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);
@@ -91,5 +91,7 @@ router.route("/child")
   .get(checkPermssion(SUBACCOUNT_MANAGE), childCtrl.fetchChildren);
 router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
+
+router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
 
 module.exports = router;

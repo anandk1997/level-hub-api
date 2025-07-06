@@ -2,6 +2,7 @@
 
 
 const { db } = require('../db');
+const { checkIfUserAssociated } = require('../helpers/userHelper');
 const {
   FORBIDDEN,
   FORBIDDEN_EXCEPTION,
@@ -29,7 +30,7 @@ const checkPermssion = (permissionKey) => {
     try {
       const userId = req.userId;
       const userInfo = await db.Users.findOne({
-        attributes: ['id', 'email', 'firstName', 'lastName', 'fullName', 'roleId', 'isPrimaryAccount'],
+        attributes: ['id', 'email', 'firstName', 'lastName', 'username', 'fullName', 'roleId', 'isPrimaryAccount', 'ownerId'],
         where: { id: userId },
         include: {
           model: db.Roles,
@@ -55,6 +56,10 @@ const checkPermssion = (permissionKey) => {
         email: userInfo?.email,
         isPrimaryAccount: userInfo?.isPrimaryAccount,
         roleId: userInfo?.roleId,
+        username: userInfo?.username,
+        firstName: userInfo?.firstName,
+        lastName: userInfo?.lastName,
+        ownerId: userInfo?.ownerId,
         role: userInfo?.Role?.name,
       };
       next();
@@ -65,6 +70,36 @@ const checkPermssion = (permissionKey) => {
   
 };
 
+
+/**
+ * Check if given userId is assoicated to the logged-in user
+ *
+ * @param {string?} type
+ * @param {string?} key
+ */
+const checkAssociatedUser = (type = 'query', key = 'userId') => {
+  /**
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
+  return async (req, res, next) => {
+    try {
+      const primaryUserId = parseInt(req.userId), userInfo = req.user;
+      let associatedUserId = req[type][key] ? parseInt(req[type][key]) : req[type][key];
+      if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
+      if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+      associatedUserId = parseInt(associatedUserId);
+      const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
+      if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+      next();
+    } catch (error) {
+      return next({ error, statusCode: 500, message: error?.message });
+    }
+  }
+};
+
 module.exports = {
 	checkPermssion,
+  checkAssociatedUser,
 };
