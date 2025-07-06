@@ -30,7 +30,7 @@ const checkPermssion = (permissionKey) => {
     try {
       const userId = req.userId;
       const userInfo = await db.Users.findOne({
-        attributes: ['id', 'email', 'firstName', 'lastName', 'fullName', 'roleId', 'isPrimaryAccount'],
+        attributes: ['id', 'email', 'firstName', 'lastName', 'username', 'fullName', 'roleId', 'isPrimaryAccount', 'ownerId'],
         where: { id: userId },
         include: {
           model: db.Roles,
@@ -56,6 +56,10 @@ const checkPermssion = (permissionKey) => {
         email: userInfo?.email,
         isPrimaryAccount: userInfo?.isPrimaryAccount,
         roleId: userInfo?.roleId,
+        username: userInfo?.username,
+        firstName: userInfo?.firstName,
+        lastName: userInfo?.lastName,
+        ownerId: userInfo?.ownerId,
         role: userInfo?.Role?.name,
       };
       next();

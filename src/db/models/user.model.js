@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     lastName: {
       type: DataTypes.STRING(128),
-      allowNull: false,
+      allowNull: true,
     },
     email: {
       type: DataTypes.STRING(128),

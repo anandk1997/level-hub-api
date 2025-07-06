@@ -135,11 +135,66 @@ const fetchOwner = async (userId, userInfo, returnIdOnly = true) => {
 	}
 };
 
+/**
+ * Fetch all associated users based on goven relationship type
+ *
+ * @param {number} primaryUserId
+ * @param {string?} relationType
+ * @returns {Object}
+ */
+const fetchUsersAssociated = async (primaryUserId, relationType) => {
+	try {
+		let where = { primaryUserId };
+		if (relationType) {
+			where = { ...where, relationType };
+		}
+		return await db.Users.findAll({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
+			include: [{
+				model: db.UserAssociations,
+				as: 'associatedUser',
+				attributes: [],
+				where,
+				subQuery: false,
+			}],
+			order: [['firstName', 'ASC']],
+		});
+	} catch (error) {
+		throw error;
+	}
+};
+
+
+/**
+ * Fetches user associations based on the primary user ID and optional relation type
+ *
+ * @param {number} primaryUserId
+ * @param {string?} relationType
+ * @param {string[]?} attributes
+ * @returns {Object}
+ */
+const fetchAssociations = async (primaryUserId, relationType, attributes = ['associatedUserId']) => {
+	try {
+		let where = { primaryUserId };
+		if (relationType) {
+			where = { ...where, relationType };
+		}
+		return await db.UserAssociations.findAll({
+			attributes,
+			where
+		});
+	} catch (error) {
+		throw error;
+	}
+};
+
 module.exports = {
 	checkIfUserExists,
 	fetchUser,
 	fetchPrimaryUser,
 	checkIfUserAssociated,
 	fetchRelationBasedOnRole,
-	fetchOwner
+	fetchOwner,
+	fetchUsersAssociated,
+	fetchAssociations
 };

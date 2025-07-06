@@ -20,6 +20,7 @@ const {
   ACTIVITY_ASSIGNEE_MISMATCH,
   ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION,
   ACTIVITY_DELETED_SUCCESS,
+  ACTIVITY_DELETED_FAILURE,
 } = require('../messages.js');
 
 const { Op, fn, col, where, literal } = db.Sequelize;
@@ -156,23 +157,28 @@ const fetchActivityDetails = async (req, res, next) => {
  * Fetch if activity lies on current date
  * 
  * @param {Array} activityIds
- * @param {Array?} attributes
+ * @param {string[]?} attributes
+ * @param {number[]?} allowedAssigneeIds
  */
-const checkIfActivityIsActive = async (activityIds, attributes) => {
+const checkIfActivityIsActive = async (activityIds, attributes, allowedAssigneeIds) => {
   const currentDate = dayjs().format("YYYY-MM-DD"), currentDay = dayjs().format('dddd').toLowerCase();
+  const where = {
+    id: { [Op.in]: activityIds },
+    startDate: { [Op.lte]: currentDate },
+    endDate: { [Op.gte]: currentDate },
+    [Op.and]: literal(`
+      CASE
+        WHEN "isRecurring" = true THEN '${currentDay}' = ANY("assignedDays")
+        ELSE "assignedDays" IS NULL
+      END
+    `)
+  };
+  if (allowedAssigneeIds?.length) {
+    where.assigneeId = { [Op.in]: allowedAssigneeIds };
+  }
   return await db.Activities.findAll({
     attributes,
-    where: {
-      id: { [Op.in]: activityIds },
-      startDate: { [Op.lte]: currentDate },
-      endDate: { [Op.gte]: currentDate },
-      [Op.and]: literal(`
-        CASE
-          WHEN "isRecurring" = true THEN '${currentDay}' = ANY("assignedDays")
-          ELSE "assignedDays" IS NULL
-        END  
-      `)
-    }
+    where
   });
 };
 
@@ -202,11 +208,15 @@ const checkIfActivityIsApproved = async (activityIds) => {
  */
 const approveActivity = async (req, res, next) => {
   try {
-    const { activityIds } = req.body, approvedById = parseInt(req.userId), approvedByName = "Test UserName";
+    const { activityIds } = req.body, approvedById = req.userId, approvedByName = "Test UserName", userInfo = req.user;
     const currentDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    const primaryUserId = userInfo?.ownerId ? userInfo?.ownerId : approvedById;
+    const associatedUsers = await userHelper.fetchAssociations(primaryUserId);
+    let associatedUserIds = associatedUsers.map(user => user.associatedUserId);
+    associatedUserIds = [ ...associatedUserIds, req.userId ];
     
-    // Check if all activities are active
-    const activities = await checkIfActivityIsActive(activityIds, ['id', 'title', 'description', 'videoLink', 'xp', 'assigneeId', 'assignedById']);
+    // Check if all activities are active and user have the access to approve them
+    const activities = await checkIfActivityIsActive(activityIds, ['id', 'title', 'description', 'videoLink', 'xp', 'assigneeId', 'assignedById'], associatedUserIds);
     if (activities?.length !== activityIds.length) { return res.response(ACTIVITIES_DOESNT_EXISTS, {}, 400, ACTIVITY_DOESNT_EXISTS_EXCEPTION, false); }
 
     // Check if all activities are assigned to the same user
@@ -254,9 +264,18 @@ const approveActivity = async (req, res, next) => {
  */
 const deleteActvity = async (req, res, next) => {
   try {
-    const activityId = parseInt(req.params.id);
-    const result = await db.Activities.destroy({ where: { id: activityId } })
-    return res.response(ACTIVITY_DELETED_SUCCESS, result);
+    const activityId = parseInt(req.params.id), userInfo = req.user;
+    const primaryUserId = userInfo?.ownerId ? userInfo?.ownerId : req.userId;
+    const associatedUsers = await userHelper.fetchAssociations(primaryUserId);
+    let associatedUserIds = associatedUsers.map(user => user.associatedUserId);
+    associatedUserIds = [ ...associatedUserIds, req.userId ];
+
+    let where = { id: activityId };
+    if (associatedUserIds?.length) {
+      where.assigneeId = { [Op.in]: associatedUserIds };
+    }
+    const result = await db.Activities.destroy({ where })
+    return res.response(result ? ACTIVITY_DELETED_SUCCESS : ACTIVITY_DELETED_FAILURE, result);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
