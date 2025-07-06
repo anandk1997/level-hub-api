@@ -272,7 +272,7 @@ const deleteActvity = async (req, res, next) => {
       where.assigneeId = { [Op.in]: associatedUserIds };
     }
     const result = await db.Activities.destroy({ where })
-    return res.response(result ? ACTIVITY_DELETED_SUCCESS : ACTIVITY_DELETED_FAILURE, result);
+    return res.response(result ? ACTIVITY_DELETED_SUCCESS : ACTIVITY_DELETED_FAILURE, result, result ? 200 : 404);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
