@@ -43,7 +43,6 @@ module.exports = {
       gender: {
         type: Sequelize.ENUM,
         values: ['male', 'female', 'others'],
-        defaultValue: 'male',
         allowNull: true,
       },
       profileImage: {

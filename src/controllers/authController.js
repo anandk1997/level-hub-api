@@ -67,11 +67,10 @@ const signup = async (req, res, next) => {
       firstName: request.firstName.trim(),
       lastName: request.lastName ? request.lastName.trim() : null,
       email: request.email.trim(),
-      phone: request?.phone?.trim(),
-      gender: request?.gender?.trim(),
+      phone: request?.phone? request?.phone?.trim() : null,
+      gender: request?.gender? request?.gender?.trim() : null,
       password,
-      dob: request.dob,
-      category: request.category,
+      dob: request.dob || null,
       roleId: role.id,
 			isPrimaryAccount: request?.source === 'self',
     };
@@ -181,8 +180,8 @@ const resendRegistrationOtp = async (req, res, next) => {
  */
 const signin = async (req, res, next) => {
 	const request = req.body;
-	request.password = request.password.trim();
-	request.email = request.email.trim();
+	request.password = request?.password?.trim();
+	request.email = request?.email?.trim();
 
 	try {
 		const user = await db.Users.findOne({
@@ -193,7 +192,12 @@ const signin = async (req, res, next) => {
 				'email',
 				'password',
 			],		
-			where: { email: request.email },
+			where: {
+				[Op.or]: {
+					email: request.email,
+					username: request.email,
+				}
+			},
 			include: [{
 				model: db.UserConfig,
 				attributes: ['isVerified'],

@@ -24,7 +24,6 @@ const signupValidation = async (req, res, next) => {
 		password: Joi.string().min(8).max(128).required(),
 		gender: Joi.string().valid('male', 'female', 'others').optional(),
 		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
-		category: Joi.string().optional(),
 		source: Joi.string().valid('self', 'invite').required(),
 		type: Joi.when('source', {
 			is: 'self',
@@ -106,7 +105,15 @@ const resendOtp = async (req, res, next) => {
  */
 const signinValidation = async (req, res, next) => {
 	const schema = Joi.object({
-		email: Joi.string().email({ minDomainSegments: 2 }).required(),
+		email: Joi.alternatives().try(
+			Joi.string().email({ minDomainSegments: 2 }).message('Invalid email format'),
+			Joi.string()
+				.pattern(/^(?=.{3,100}$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9_.-]*[a-zA-Z0-9])?$/)
+		).required().messages({
+			'alternatives.match': 'Signin must be via a valid email or username',
+			'any.required': 'Email/username is required',
+		}),
+		// email: Joi.string().email({ minDomainSegments: 2 }).required(),
 		password: Joi.string().min(8).max(128).required(),
 	});
 	try {
@@ -141,8 +148,6 @@ const resetPasswordValidation = async (req, res, next) => {
 		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
 	}
 };
-
-
 
 
 module.exports = {
