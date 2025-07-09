@@ -180,8 +180,8 @@ const resendRegistrationOtp = async (req, res, next) => {
  */
 const signin = async (req, res, next) => {
 	const request = req.body;
-	request.password = request.password.trim();
-	request.email = request.email.trim();
+	request.password = request?.password?.trim();
+	request.email = request?.email?.trim();
 
 	try {
 		const user = await db.Users.findOne({
@@ -192,7 +192,12 @@ const signin = async (req, res, next) => {
 				'email',
 				'password',
 			],		
-			where: { email: request.email },
+			where: {
+				[Op.or]: {
+					email: request.email,
+					username: request.email,
+				}
+			},
 			include: [{
 				model: db.UserConfig,
 				attributes: ['isVerified'],

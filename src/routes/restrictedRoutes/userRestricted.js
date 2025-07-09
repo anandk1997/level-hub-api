@@ -50,13 +50,12 @@ router.route("/level")
 router.route("/activity")
   .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.saveActivityValidation, actCtrl.createActivity);
 router.route("/activity/list")
-  .post(checkPermssion(ACTIVITY_MANAGE), checkAssociatedUser('body', 'assigneeId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
+  .post(checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('body', 'assigneeId'), activityValidation.fetchActivitiesValidation, actCtrl.fetchActivities);
 router.route("/activity/approve")
   .put(checkPermssion(ACTIVITY_APPROVE), activityValidation.approveActivityValidation, actCtrl.approveActivity);
 router.route("/activity/:id")
-  .all(checkPermssion(ACTIVITY_MANAGE))
-  .get(actCtrl.fetchActivityDetails)
-  .delete(actCtrl.deleteActvity);
+  .get(checkPermssion(ACTIVITY_VIEW), actCtrl.fetchActivityDetails)
+  .delete(checkPermssion(ACTIVITY_MANAGE), actCtrl.deleteActvity);
 
 // ACTIVITY TEMPLATE
 router.route("/template")
@@ -86,9 +85,10 @@ router.route("/profile")
 
 // CHILD MANAGEMENT
 router.route("/child")
-  .post(checkPermssion(SUBACCOUNT_MANAGE), userValidation.childAccountValidation, childCtrl.createChildAccount)
-  .put(checkPermssion(SUBACCOUNT_MANAGE), userValidation.updateChildValidation, childCtrl.updateChild)
-  .get(checkPermssion(SUBACCOUNT_MANAGE), childCtrl.fetchChildren);
+  .all(checkPermssion(SUBACCOUNT_MANAGE))
+  .post(userValidation.childAccountValidation, childCtrl.createChildAccount)
+  .put(userValidation.updateChildValidation, childCtrl.updateChild)
+  .get(childCtrl.fetchChildren);
 router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
 
