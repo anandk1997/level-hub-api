@@ -206,6 +206,13 @@ const signin = async (req, res, next) => {
 				model: db.Roles,
 				attributes: ['name'],
 				required: true,
+				include: {
+					model: db.Permissions,
+					as: 'permissions',
+					required: true,
+					attributes: ['id', 'key'],
+					through: { attributes: [] },
+				}
 			}],
 		});
 		
@@ -221,10 +228,11 @@ const signin = async (req, res, next) => {
 			id: user.id,
 			fullName: `${user.firstName} ${user.lastName}`.trim(),
 			email: user.email,
-			role: user?.Role?.name
+			role: user?.Role?.name,
 		};
 
 		const token = await Auth.authorize(userData, '1d');
+		userData.permissions = user?.Role?.permissions;
 		return res.response(SIGNIN_SUCCESS, { user: userData, token });
 
 	} catch (error) {
