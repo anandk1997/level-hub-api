@@ -17,7 +17,7 @@ const templateHTML = (content) => {
 			<br/>
 	`;
 	htmlContent += content;
-	htmlContent += `<br/><br/><br/><b>Thanks and Regards<br/>${SMTP.fromAlias}</b></div>`;
+	htmlContent += `<br/><br/><br/><b>Keep leveling up,<br/>${SMTP.fromAlias}</b></div>`;
 
 	return htmlContent;
 };
@@ -30,7 +30,7 @@ const templateHTML = (content) => {
  */
 const templateMailText = (content) => {
 	let textContent = content;
-	textContent += "\n\n\nThanks and Regards\n" + SMTP.fromAlias;
+	textContent += "\n\n\nKeep leveling up,\n" + SMTP.fromAlias;
 
 	return textContent;
 };

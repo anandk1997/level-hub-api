@@ -66,6 +66,7 @@ module.exports = {
     REPORT_FETCH_SUCCESS: 'Montly activity report fetched successfully.',
     DASH_ALL_STATS_FETCH_SUCCESS: 'All time activity stats fetched successfully.',
     DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
+    DASH_LEADERBOARD_FETCH_SUCCESS: "Leaderboard stats fetched successfully.",
     VALIDATION_ERROR_EXCEPTION : "ValidationErrorException",
     FETCH_PROFILE_SUCCESS: 'Fetched user profile successfully.',
     FORBIDDEN: 'Forbidden access.',
