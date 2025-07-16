@@ -8,6 +8,7 @@ const { VALIDATION_ERROR_EXCEPTION, ACT_END_DATE_MIN_VALIDATION, ACT_END_DATE_MA
 const dayjs = require('dayjs');
 
 const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DAYS;
+/** @type {import('joi')} */
 const joiExtended = Joi.extend(joiDate);
 
 /**
@@ -41,7 +42,11 @@ const saveActivityValidation = async (req, res, next) => {
       then: Joi.array().min(1).required(),
       otherwise: Joi.forbidden(),
     }),
-    startDate: joiExtended.date().format('YYYY-MM-DD').raw().required().min(currentDate).max(maxStartDate).messages({
+    startDate: joiExtended.date().format('YYYY-MM-DD').raw().required().when('activityId', {
+      is: Joi.exist(),
+      then: joiExtended.date().format('YYYY-MM-DD').raw().required().max(maxStartDate),
+      otherwise: joiExtended.date().format('YYYY-MM-DD').raw().required().min(currentDate).max(maxStartDate)
+    }).messages({
       'date.min': ACT_START_DATE_MIN_VALIDATION,
       'date.max': ACT_START_DATE_MAX_VALIDATION
     }),

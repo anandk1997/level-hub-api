@@ -188,6 +188,20 @@ const fetchAssociations = async (primaryUserId, relationType, attributes = ['ass
 	}
 };
 
+/**
+ * Fetch target info of given user
+ *
+ * @param {number} userId
+ * @param {string[]?} attributes
+ * @returns {Object}
+ */
+const fetchUserTarget = async (userId, attributes = ['id', 'targetXP']) => {
+	return db.Targets.findOne({
+		attributes,
+		where: { userId },
+	});
+}
+
 module.exports = {
 	checkIfUserExists,
 	fetchUser,
@@ -196,5 +210,6 @@ module.exports = {
 	fetchRelationBasedOnRole,
 	fetchOwner,
 	fetchUsersAssociated,
-	fetchAssociations
+	fetchAssociations,
+	fetchUserTarget,
 };

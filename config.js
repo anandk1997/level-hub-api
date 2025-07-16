@@ -31,7 +31,7 @@ module.exports = {
 		user: 'dev.kanishk.gupta@gmail.com',
 		pass: 'djxt vvdz xpgc acmj',
 		fromEmail: 'dev.kanishk.gupta@gmail.com',
-		fromAlias: 'LevelHub Admin',
+		fromAlias: 'LevelHub Team',
 		adminEmail: ['dev.kanishk.gupta@gmail.com'],
 	},
 	/* SMTP: {

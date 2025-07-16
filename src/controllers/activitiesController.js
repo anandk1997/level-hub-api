@@ -3,7 +3,7 @@
 const dayjs = require('dayjs');
 
 const { db } = require('../db');
-const { userHelper } = require('../helpers');
+const { userHelper, Mailer, mailHelper } = require('../helpers');
 const {
   ACTIVITY_CREATED_SUCCESS,
   ACTIVITY_UPDATED_SUCCESS,
@@ -197,6 +197,48 @@ const checkIfActivityIsApproved = async (activityIds) => {
 };
 
 /**
+ * Evaluate if assignee's level is increased and send mail
+ *
+ * @param {number} currentXP
+ * @param {number} totalXP
+ * @param {Object} userInfo
+ * @param {Object} mailUserInfo
+ * @param {import('sequelize').Transaction} t
+ */
+const evaluateLevelChange = async  (currentXP, totalXP, userInfo, mailUserInfo, t) => {
+  try {
+    const ownerId = userInfo?.ownerId || userInfo?.userId;
+    const target = await db.Targets.findOne({
+      attributes: ['id', 'targetXP'],
+      where: { userId: ownerId },
+    }, { transaction: t });
+
+    const previousXP = currentXP - totalXP;
+    const previousLevel = target?.targetXP && previousXP ? Math.floor(previousXP / target?.targetXP) : 0;
+    const currentLevel = target?.targetXP && currentXP ? Math.floor(currentXP / target?.targetXP) : 0;
+
+    if (currentLevel > previousLevel && userInfo?.email) {
+      const mailData = {
+        fullName: mailUserInfo?.fullName || userInfo?.fullName,
+        parentFullName: userInfo?.fullName,
+        email: userInfo?.email,
+        currentLevel,
+        currentXP,
+        previousXP,
+      };
+      if (mailUserInfo?.fullName) {
+        await mailHelper.sendLevelUpEmailToParent(mailData);
+      } else {
+        await mailHelper.sendLevelUpEmail(mailData);
+      }
+    }
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Approve an activity
  *
  * @param {import('express').Request} req
@@ -205,10 +247,11 @@ const checkIfActivityIsApproved = async (activityIds) => {
  */
 const approveActivity = async (req, res, next) => {
   try {
-    const { activityIds } = req.body, approvedById = req.userId, approvedByName = "Test UserName", userInfo = req.user;
+    const { activityIds } = req.body, approvedById = req.userId, userInfo = req.user;
+    const approvedByName = userInfo?.fullName;
     const currentDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
     const primaryUserId = userInfo?.ownerId ? userInfo?.ownerId : approvedById;
-    const associatedUsers = await userHelper.fetchAssociations(primaryUserId);
+    const associatedUsers = await userHelper.fetchAssociations(primaryUserId, null);
     let associatedUserIds = associatedUsers.map(user => user.associatedUserId);
     associatedUserIds = [ ...associatedUserIds, req.userId ];
     
@@ -219,6 +262,18 @@ const approveActivity = async (req, res, next) => {
     // Check if all activities are assigned to the same user
     const assignedUserIds = [...new Set(activities.map(activity => activity.assigneeId))];
     if (assignedUserIds.length > 1) { return res.response(ACTIVITY_ASSIGNEE_MISMATCH, {}, 400, ACTIVITY_ASSIGNEE_MISMATCH_EXCEPTION, false); }
+    const assigneeId = activities[0].assigneeId;
+
+    let mailUserInfo = null;
+    if (assignedUserIds.length && assigneeId !== approvedById) {
+      // Find assignee info
+      mailUserInfo = await db.Users.findOne({
+        attributes: ['id', 'email', 'fullName', 'firstName', 'lastName'],
+        where: {
+          id: assigneeId
+        }
+      });
+    }
     
     // Check if activity is already approved on CURRENT DATE
     const checkIfAlreadyApproved = await checkIfActivityIsApproved(activityIds);
@@ -241,9 +296,12 @@ const approveActivity = async (req, res, next) => {
       }));
       const totalXP = activities.reduce((total, activity) => total + activity.xp, 0);
       const result = await db.ActivityHistory.bulkCreate(histories, { transaction: t });   
-      return await db.UserProgress.increment('currentXP', {
-        by: totalXP, where: { userId: activities[0].assigneeId }
-      }, { transaction: t });
+      const [[updatedRows, count]] = await db.UserProgress.increment('currentXP', {
+        by: totalXP, where: { userId: assigneeId }
+      }, { returning: true, transaction: t });
+      const currentXP = updatedRows[0]?.currentXP;
+
+      return await evaluateLevelChange(currentXP, totalXP, userInfo, mailUserInfo, t);
     });
 
     return res.response(ACTIVITY_APPROVED_SUCCESS);
@@ -277,6 +335,7 @@ const deleteActvity = async (req, res, next) => {
     return next({ error, statusCode: 500, message: error?.message });
   }
 };
+
 
 module.exports = {
   createActivity,

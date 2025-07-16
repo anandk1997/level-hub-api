@@ -7,7 +7,18 @@ const {
   ACTIVITY_GRAPH_FETCH_SUCCESS,
   DASH_ALL_STATS_FETCH_SUCCESS,
   DASH_TODAY_STATS_FETCH_SUCCESS,
+  DASH_LEADERBOARD_FETCH_SUCCESS,
 } = require('../messages');
+const { userHelper } = require('../helpers');
+const {
+  ROLES: {
+    PARENT,
+    PARENT_OWNER,
+    INDIVIDUAL,
+    INDIVIDUAL_OWNER,
+    CHILD
+  }
+} = require('../constants')
 
 const { Op, fn, col, where, literal, QueryTypes } = db.Sequelize;
 
@@ -157,8 +168,53 @@ const fetchTodaysActivities = async (req, res, next) => {
   }
 };
 
+/**
+ * Fetch leaderboard stats
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchLeaderboard = async (req, res, next) => {
+  try {
+    const userId = req.userId, userInfo = req.user;
+    const target = await userHelper.fetchUserTarget(userId);
+
+    const leaderboard = await db.Users.findAll({
+      attributes: ['id', 'firstName', 'lastName', 'fullName', 'email', 'username'],
+      where: {
+        [Op.or]: {
+          id: userId,
+          ownerId: userId,
+        }
+      },
+      include: [
+        {
+          model: db.UserProgress,
+          attributes: ['currentXP']
+        },
+        {
+          attributes: ['id', 'name'],
+          model: db.Roles,
+          where: {
+            name: [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ]
+          }
+        }
+      ],
+      limit: 10,
+      offset: 0,
+      order: [[{ model: db.UserProgress },'currentXP', 'DESC']],
+      subQuery: false
+    });
+    return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { leaderboard });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 module.exports = {
   fetchMonthlyActivityHistory,
   fetchAllTimeActivities,
   fetchTodaysActivities,
+  fetchLeaderboard,
 }

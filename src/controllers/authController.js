@@ -37,7 +37,7 @@ const {
 } = require('../messages.js');
 
 const { checkIfUserExists } = userHelper;
-const { Op } = db.Sequelize;
+const { Op, where, col, fn } = db.Sequelize;
 
 /**
  * Sign Up user
@@ -181,7 +181,7 @@ const resendRegistrationOtp = async (req, res, next) => {
 const signin = async (req, res, next) => {
 	const request = req.body;
 	request.password = request?.password?.trim();
-	request.email = request?.email?.trim();
+	request.email = request?.email?.trim().toLowerCase();
 
 	try {
 		const user = await db.Users.findOne({
@@ -193,10 +193,10 @@ const signin = async (req, res, next) => {
 				'password',
 			],		
 			where: {
-				[Op.or]: {
-					email: request.email,
-					username: request.email,
-				}
+				[Op.or]: [
+					where(fn('LOWER', col('email')), request.email),
+					where(fn('LOWER', col('username')), request.email),
+				]
 			},
 			include: [{
 				model: db.UserConfig,
