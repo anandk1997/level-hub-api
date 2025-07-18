@@ -6,7 +6,6 @@ const { Model } = require('sequelize');
  * @typedef {import('sequelize').Model} Model
  * @typedef {import('sequelize').Sequelize} Sequelize
  */
-
 module.exports = (sequelize, DataTypes) => {
   class Users extends Model {
     /**
@@ -98,7 +97,7 @@ module.exports = (sequelize, DataTypes) => {
     fullName: {
       type: DataTypes.VIRTUAL,
       get() {
-        return `${this.firstName} ${this.lastName}`.trim();
+        return `${this.firstName} ${this.lastName ? this.lastName : ''}`.trim();
       }
     },
   
