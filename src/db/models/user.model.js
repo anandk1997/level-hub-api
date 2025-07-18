@@ -6,7 +6,6 @@ const { Model } = require('sequelize');
  * @typedef {import('sequelize').Model} Model
  * @typedef {import('sequelize').Sequelize} Sequelize
  */
-
 module.exports = (sequelize, DataTypes) => {
   class Users extends Model {
     /**
@@ -27,6 +26,8 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.UserAssociations, { foreignKey: 'associatedUserId', as: 'associatedUser' });
       Users.belongsTo(models.Users, { foreignKey: 'ownerId', as: 'owner' });
       Users.hasMany(models.Users, { foreignKey: 'ownerId', as: 'subUsers' });
+      Users.hasMany(models.Invites, { foreignKey: 'ownerId' });
+      Users.hasMany(models.Invites, { foreignKey: 'sentBy' });
     }
   }
   Users.init({

@@ -4,6 +4,13 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.bulkInsert('rolePermissions', [
+      { roleId: 3, permissionId: 1 },
+      { roleId: 3, permissionId: 2 },
+      { roleId: 3, permissionId: 3 },
+      { roleId: 3, permissionId: 4 },
+      { roleId: 3, permissionId: 5 },
+      { roleId: 3, permissionId: 6 },
+      { roleId: 3, permissionId: 7 },
       { roleId: 6, permissionId: 1 },
       { roleId: 6, permissionId: 2 },
       { roleId: 6, permissionId: 3 },

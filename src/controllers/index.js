@@ -6,6 +6,7 @@ const dashCtrl = require('./dashboardController');
 const templateCtrl = require('./activityTemplateController');
 const userCtrl = require('./userController');
 const childCtrl = require('./childController');
+const inviteCtrl = require('./inviteController');
 
 module.exports = {
   authCtrl,
@@ -15,5 +16,6 @@ module.exports = {
   dashCtrl,
   templateCtrl,
   userCtrl,
-  childCtrl
+  childCtrl,
+  inviteCtrl,
 };

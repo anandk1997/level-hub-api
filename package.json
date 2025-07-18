@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
+    "start": "env-cmd -f .env nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
+    "start:staging": "env-cmd -f .env.staging nodemon --experimental-modules --experimental-specifier-resolution=node --es-module-specifier-resolution=node index.js",
     "start:dev": "nodemon --experimental-modules --es-module-specifier-resolution=node index.js",
     "seed:generate": "sequelize-cli seed:generate --name seed-data",
     "seed:apply": "sequelize-cli db:seed:all --config src/db/config/config.js --seeders-path src/db/seeders",

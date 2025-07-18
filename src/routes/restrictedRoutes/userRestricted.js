@@ -11,6 +11,7 @@ const {
   templateCtrl,
   userCtrl,
   childCtrl,
+  inviteCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
@@ -19,6 +20,7 @@ const {
   reportsValidation,
   templateValidation,
   userValidation,
+  inviteValidation,
 } = require("../../validations");
 const {
   auth,
@@ -94,5 +96,10 @@ router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValid
 router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
 
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
+
+// INVITE
+router.route("/invite")
+  .all(checkPermssion(USER_INVITE))
+  .post(inviteValidation.sendInviteValidation, inviteCtrl.sendInvite);
 
 module.exports = router;

@@ -46,6 +46,8 @@ const {
  * @property {Permissions} Permissions - Permissions model
  * @property {RolePermissions} RolePermissions - RolePermissions model
  * @property {UserAssociations} UserAssociations - UserAssociations model
+ * @property {UserAssociations} UserAssociations - UserAssociations model
+ * @property {import('./invite.model').Model} Invites - Invites model
  */
 
 /** @type {DBModels} */
