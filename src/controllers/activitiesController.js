@@ -224,7 +224,7 @@ const evaluateLevelChange = async  (currentXP, totalXP, userInfo, mailUserInfo, 
         email: userInfo?.email,
         currentLevel,
         currentXP,
-        previousXP,
+        targetXP: target?.targetXP,
       };
       if (mailUserInfo?.fullName) {
         await mailHelper.sendLevelUpEmailToParent(mailData);
