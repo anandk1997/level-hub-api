@@ -48,7 +48,7 @@ const fetchLevelInfo = async (req, res, next) => {
     let userId = req.userId, userInfo = req.user;
     const associatedUserId = req.query?.userId ? parseInt(req.query?.userId) : null;
 
-    if (associatedUserId) {
+    if (associatedUserId && associatedUserId !== userId) {
       userId = associatedUserId;
       userInfo = { userId: associatedUserId };
     }

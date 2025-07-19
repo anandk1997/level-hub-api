@@ -99,7 +99,7 @@ module.exports = (sequelize, DataTypes) => {
     fullName: {
       type: DataTypes.VIRTUAL,
       get() {
-        return `${this.firstName} ${this.lastName}`.trim();
+        return `${this.firstName} ${this.lastName ? this.lastName : ''}`.trim();
       }
     },
   

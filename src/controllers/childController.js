@@ -141,7 +141,7 @@ const fetchChildren = async (req, res, next) => {
 				attributes: ['id', 'userId', 'currentXP'],
 				subQuery: false
 			}],
-			order: [['firstName', 'DESC']],
+			order: [['firstName', 'ASC']],
 			subQuery: false
 		});
 		const children = rows.map(child => {
