@@ -26,8 +26,9 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.UserAssociations, { foreignKey: 'associatedUserId', as: 'associatedUser' });
       Users.belongsTo(models.Users, { foreignKey: 'ownerId', as: 'owner' });
       Users.hasMany(models.Users, { foreignKey: 'ownerId', as: 'subUsers' });
-      Users.hasMany(models.Invites, { foreignKey: 'ownerId' });
-      Users.hasMany(models.Invites, { foreignKey: 'sentBy', as: 'sentByUser' });
+      Users.hasMany(models.Invites, { foreignKey: 'ownerId', as: 'inviteOwner' });
+      Users.hasMany(models.Invites, { foreignKey: 'sentById', as: 'sentByUser' });
+      Users.hasMany(models.Invites, { foreignKey: 'userId', as: 'cretaedUser' });
     }
   }
   Users.init({

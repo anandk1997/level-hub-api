@@ -88,5 +88,8 @@ module.exports = {
     INVITE_FETCH_SUCCESS: 'Invite details fetched successfully.',
     INVITE_DELETED_SUCCESS: 'Invite deleted successfully.',
     INVITE_DELETED_FAILURE: 'Invite deleted failed.',
-
+    INVITE_INVALID: "Invite doesn't exist!",
+    INVITE_INVALID_EXCEPTION: 'InviteInvalidException',
+    INVITE_EXPIRED: "Invite is expired!",
+    INVITE_EXPIRED_EXCEPTION: 'InviteExpiredException',
 }

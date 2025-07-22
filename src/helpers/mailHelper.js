@@ -96,7 +96,7 @@ const sendInviteEmail = async (mailData) => {
 		let mailText = `Hi ${mailData.fullName}, \n\n${mailData.ownerName} has invited you to join them — and we're excited to have you onboard! \nTo get started, simply copy the link into your browser.\n${inviteUrl} \n\n🎉 Congratulations on being part of something awesome — we can't wait to see what you'll do!\n`;
 
 		let mailHtml =
-		`Hi ${mailData.fullName},<br/><br/>
+		`<b>Hi ${mailData.fullName},</b><br/><br/>
 		${mailData.ownerName} has invited you to join them — and we're excited to have you onboard!<br/>
 		To get started, simply click the button below or copy the link into your browser:<br/>
 		<b><a style="color:blue" href=${inviteUrl} target="_blank">Join Now<a/></b><br/>

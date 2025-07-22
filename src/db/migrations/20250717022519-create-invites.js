@@ -26,7 +26,7 @@ module.exports = {
         },
       },
       role: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(128),
         allowNull: false,
       },
       ownerId: {
@@ -38,17 +38,16 @@ module.exports = {
           onDelete: 'CASCADE',
         },
       },
-      sentBy: {
+      sentById: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'users',
           key: 'id',
-          onDelete: 'CASCADE',
         },
       },
       token: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(64),
         allowNull: false,
         unique: true,
       },
@@ -60,6 +59,14 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
+      userId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -67,7 +74,7 @@ module.exports = {
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
-      }
+      },
     });
   },
 

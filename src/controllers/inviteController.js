@@ -21,6 +21,10 @@ const {
 	INVITE_FETCH_SUCCESS,
 	INVITE_DELETED_SUCCESS,
 	INVITE_DELETED_FAILURE,
+	INVITE_INVALID,
+	INVITE_INVALID_EXCEPTION,
+	INVITE_EXPIRED,
+	INVITE_EXPIRED_EXCEPTION,
 } = require('../messages');
 
 const { checkIfUserExists } = userHelper;
@@ -41,6 +45,7 @@ const sendInvite = async (req, res, next) => {
 		role
 	} = req.body, userInfo = req.user;
 	const ownerId = userInfo.ownerId || userInfo.userId;
+
   try {
 		const emailExists = await checkIfUserExists(email, 'email');
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
@@ -52,7 +57,6 @@ const sendInvite = async (req, res, next) => {
 		const params = btoa(JSON.stringify({
 			token,
 			email,
-			role,
 		}));
 		const mailData = {
 			params,
@@ -67,12 +71,12 @@ const sendInvite = async (req, res, next) => {
 			email,
 			role,
 			ownerId,
-			sentBy: userInfo.userId,
+			sentById: userInfo.userId,
 			token,
 			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
 		});
 		await mailHelper.sendInviteEmail(mailData);
-    return res.response(INVITE_SENT_SUCCESS, {}, 200);
+    return res.response(INVITE_SENT_SUCCESS, {}, 201);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -150,7 +154,7 @@ const fetchInviteDetails = async (req, res, next) => {
     const inviteId = parseInt(req.params.id), userInfo = req.user;
 		const ownerId = userInfo.ownerId || userInfo.userId;
     const invite = await db.Invites.findOne({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'sentBy', 'status', 'expiryDate'],
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'sentById', 'status', 'expiryDate'],
 			where: { id: inviteId, ownerId },
 			include: {
 				model: db.Users,
@@ -159,7 +163,9 @@ const fetchInviteDetails = async (req, res, next) => {
 				attributes: ['id', 'fullName', 'firstName', 'lastName'],
 			}
 		});
-		invite.status = dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite.status;
+		if (invite?.expiryDate) {
+			invite.status = invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
+		}
     return res.response(INVITE_FETCH_SUCCESS, { invite });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
@@ -187,9 +193,93 @@ const deleteInvite = async (req, res, next) => {
   }
 };
 
+/**
+ * Verify if an invite is valid and return the details
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const verifyInvite = async (req, res, next) => {
+	try {
+		const { token, email } = req.body;
+
+    const invite = await db.Invites.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
+			where: { token, email },
+			include: [{
+				model: db.Users,
+				as: 'sentByUser',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName'],
+			}, {
+				model: db.Users,
+				as: 'inviteOwner',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName'],
+			}]
+		});
+    if (!invite) { return res.response(INVITE_INVALID, {}, 404, INVITE_INVALID_EXCEPTION, false); }
+
+		if (dayjs(invite.expiryDate).isBefore(dayjs())) {
+			return res.response(INVITE_EXPIRED, {}, 404, INVITE_EXPIRED_EXCEPTION, false);
+		}
+
+		invite.status = invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
+
+    return res.response(INVITE_FETCH_SUCCESS, { invite });
+
+	} catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * Resend invite
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const resendInvite = async (req, res, next) => {
+	try {
+		const inviteId = req?.params?.inviteId ? parseInt(req?.params?.inviteId) : null, userInfo = req.user;
+		const ownerId = userInfo?.ownerId || userInfo?.userId;
+
+		const invite = await db.Invites.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
+			where: {
+				id: inviteId,
+				ownerId
+			}
+		});
+    if (!invite) { return res.response(INVITE_INVALID, {}, 404, INVITE_INVALID_EXCEPTION, false); }
+
+		const mailData = {
+			params: btoa(JSON.stringify({ token: invite.token, email: invite.email })),
+			fullName: (`${invite.firstName} ${invite.lastName ? invite.lastName : ''}`).trim(),
+			ownerName: userInfo.fullName,
+			email: invite.email,
+		};
+		// return res.json({ mailData, invite, inviteId });
+
+		const updated = await invite.update({
+			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
+		});
+		await mailHelper.sendInviteEmail(mailData);
+
+    return res.response(INVITE_SENT_SUCCESS, updated);
+
+	} catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
 module.exports = {
   sendInvite,
 	fetchInvites,
 	fetchInviteDetails,
 	deleteInvite,
+	verifyInvite,
+	resendInvite,
 }

@@ -15,8 +15,9 @@ module.exports = (sequelize, DataTypes) => {
      * @param {object} models
      */
     static associate(models) {
-      Invites.belongsTo(models.Users, { foreignKey: 'ownerId' });
-      Invites.belongsTo(models.Users, { foreignKey: 'sentBy', as: 'sentByUser' });
+      Invites.belongsTo(models.Users, { foreignKey: 'ownerId', as: 'inviteOwner' });
+      Invites.belongsTo(models.Users, { foreignKey: 'sentById', as: 'sentByUser' });
+      Invites.belongsTo(models.Users, { foreignKey: 'userId', as: 'createdUser' });
     }
   }
   Invites.init({
@@ -36,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     role: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(128),
       allowNull: false,
     },
     ownerId: {
@@ -48,17 +49,16 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
 			},
     },
-    sentBy: {
+    sentById: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
 				model: 'users',
 				key: 'id',
-        onDelete: 'CASCADE',
 			},
     },
     token: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(64),
       allowNull: false,
     },
     status: {
@@ -68,6 +68,15 @@ module.exports = (sequelize, DataTypes) => {
     expiryDate: {
       type: DataTypes.DATE,
       allowNull: false,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+				model: 'users',
+				key: 'id',
+        onDelete: 'CASCADE',
+			},
     }
   }, {
     timestamps: true,

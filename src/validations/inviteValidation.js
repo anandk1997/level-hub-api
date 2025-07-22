@@ -61,7 +61,29 @@ const fetchInvitesValidation = async (req, res, next) => {
   }
 };
 
+/**
+ * Verify invite validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const verifyInviteValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+	const schema = Joi.object({
+		token: Joi.string().min(1).required(),
+		email: Joi.string().max(128).email({ minDomainSegments: 2 }).required(),
+	});
+	try {
+		await schema.validateAsync(req.body);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
+
 module.exports = {
 	sendInviteValidation,
 	fetchInvitesValidation,
+	verifyInviteValidation,
 };
