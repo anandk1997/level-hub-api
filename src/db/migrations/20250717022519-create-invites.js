@@ -25,13 +25,9 @@ module.exports = {
           isEmail: true,
         },
       },
-      roleId: {
-        type: Sequelize.INTEGER,
+      role: {
+        type: Sequelize.STRING,
         allowNull: false,
-        references: {
-          model: 'roles',
-          key: 'id'
-        }
       },
       ownerId: {
         type: Sequelize.INTEGER,
@@ -56,6 +52,22 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
+      status: {
+        type: Sequelize.ENUM('pending', 'accepted', 'expired'),
+        defaultValue: 'pending'
+      },
+      expiryDate: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      createdAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      updatedAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      }
     });
   },
 

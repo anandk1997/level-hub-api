@@ -1,5 +1,6 @@
 'user strict';
 
+const { SITE_URL } = require("../../config");
 const Mailer = require("./mailer");
 
 
@@ -82,7 +83,45 @@ const sendLevelUpEmailToParent = async (mailData) => {
 	}
 };
 
+/**
+ * Send invite to create a subaccount to user via email
+ * 
+ * @param {Object} mailData 
+ */
+const sendInviteEmail = async (mailData) => {
+	try {
+		const mailer = new Mailer();
+		const inviteUrl = `${SITE_URL}invite/${mailData.params}`;
+
+		let mailText = `Hi ${mailData.fullName}, \n\n${mailData.ownerName} has invited you to join them — and we're excited to have you onboard! \nTo get started, simply copy the link into your browser.\n${inviteUrl} \n\n🎉 Congratulations on being part of something awesome — we can't wait to see what you'll do!\n`;
+
+		let mailHtml =
+		`Hi ${mailData.fullName},<br/><br/>
+		${mailData.ownerName} has invited you to join them — and we're excited to have you onboard!<br/>
+		To get started, simply click the button below or copy the link into your browser:<br/>
+		<b><a style="color:blue" href=${inviteUrl} target="_blank">Join Now<a/></b><br/>
+		If the button doesn't work, you can also use this link:<br/>
+		${inviteUrl}<br/><br/>
+		🎉 Congratulations on being part of something awesome — we can't wait to see what you'll do!<br/>`;
+
+		const mailDetails = {
+			to: mailData.email,
+			subject: `You're Invited to Join by ${mailData.ownerName}!`, // Subject line
+			text: mailText, // plain text body
+			html: mailHtml, // html body
+			priority: "high",
+			useTemplate: true,
+			sendBCC: false,
+		};
+		return await mailer.sendMail(mailDetails);
+	} catch (error) {
+		console.log("ERROR in sendRegistrationEmail : ", error);
+		throw error;
+	}
+};
+
 module.exports = {
 	sendLevelUpEmail,
-  sendLevelUpEmailToParent
+  sendLevelUpEmailToParent,
+	sendInviteEmail,
 }

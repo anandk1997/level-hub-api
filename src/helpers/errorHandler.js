@@ -2,6 +2,7 @@
 
 const dayjs = require('dayjs');
 const { COMMON_ERR_MSG } = require('../../config.js');
+const logger = require('./logger.js');
 
 class ErrorHandler extends Error {
 	
@@ -36,6 +37,7 @@ class ErrorHandler extends Error {
 const handleError = (err, res) => {
 	let { statusCode, message, error, errorCode, error_message } = err;
 	console.log(dayjs().format("YYYY-MM-DD HH:mm:ss"), '::', err);
+	logger.error(err);
 
 	statusCode = statusCode || 500;
 	message = message || COMMON_ERR_MSG;

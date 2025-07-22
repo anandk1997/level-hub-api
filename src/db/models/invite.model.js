@@ -11,12 +11,12 @@ module.exports = (sequelize, DataTypes) => {
   class Invites extends Model {
     /**
      * Define associations here
+     * 
      * @param {object} models
      */
     static associate(models) {
-      Invites.belongsTo(models.Roles, { foreignKey: 'roleId' });
       Invites.belongsTo(models.Users, { foreignKey: 'ownerId' });
-      Invites.belongsTo(models.Users, { foreignKey: 'sentBy' });
+      Invites.belongsTo(models.Users, { foreignKey: 'sentBy', as: 'sentByUser' });
     }
   }
   Invites.init({
@@ -35,13 +35,9 @@ module.exports = (sequelize, DataTypes) => {
         isEmail: true,
       },
     },
-    roleId: {
-      type: DataTypes.INTEGER,
+    role: {
+      type: DataTypes.STRING,
       allowNull: false,
-      references: {
-				model: 'roles',
-				key: 'id'
-			},
     },
     ownerId: {
       type: DataTypes.INTEGER,
@@ -64,13 +60,30 @@ module.exports = (sequelize, DataTypes) => {
     token: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
+    status: {
+      type: DataTypes.ENUM('pending', 'accepted', 'expired'),
+      defaultValue: 'pending'
+    },
+    expiryDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    }
   }, {
     timestamps: true,
     sequelize,
     modelName: 'Invites',
     tableName: 'invites',
+    hooks: {
+      beforeCreate: async (invite) => {
+        await Invites.destroy({
+					where: {
+						email: invite.email,
+						ownerId: invite.ownerId,
+					}
+				});
+      }
+    }
   });
   return Invites;
 };

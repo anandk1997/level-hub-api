@@ -97,9 +97,20 @@ router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteC
 
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
 
-// INVITE
+// INVITE 
 router.route("/invite")
   .all(checkPermssion(USER_INVITE))
-  .post(inviteValidation.sendInviteValidation, inviteCtrl.sendInvite);
+  .post(inviteValidation.sendInviteValidation, inviteCtrl.sendInvite)
+  .get(inviteValidation.fetchInvitesValidation, inviteCtrl.fetchInvites);
+router.route("/invite/:id")
+  .all(checkPermssion(USER_INVITE))
+  .get(inviteCtrl.fetchInviteDetails)
+  .delete(inviteCtrl.deleteInvite);
+
+
+// send
+// resend
+// delete
+// fetch
 
 module.exports = router;

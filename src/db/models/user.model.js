@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       Users.belongsTo(models.Users, { foreignKey: 'ownerId', as: 'owner' });
       Users.hasMany(models.Users, { foreignKey: 'ownerId', as: 'subUsers' });
       Users.hasMany(models.Invites, { foreignKey: 'ownerId' });
-      Users.hasMany(models.Invites, { foreignKey: 'sentBy' });
+      Users.hasMany(models.Invites, { foreignKey: 'sentBy', as: 'sentByUser' });
     }
   }
   Users.init({

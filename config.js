@@ -14,6 +14,7 @@ module.exports = {
 	PASS_RESET_OTP: 'password_reset',
 	APP_NAME: "Level Hub",
 	MAX_CHILD_LIMIT: 10,
+	SITE_URL: process.env.SITE_URL,
 	/* SMTP: {
 		host: 'mail.lovestoriez.com',
 		port: 465,
@@ -45,4 +46,5 @@ module.exports = {
 		adminEmail: ['anandslk1997@gmail.com'],
 	}, */
 	OTP_VALIDITY: 30, // In minutes
+	INVITE_VALIDITY: 7, // In days
 };

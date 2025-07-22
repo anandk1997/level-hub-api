@@ -37,7 +37,8 @@
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "redis": "^4.7.0",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "env-cmd": "^10.1.0",

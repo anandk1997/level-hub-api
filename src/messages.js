@@ -81,4 +81,12 @@ module.exports = {
     PASSWORD_RESET_SUCCESS: "Password reset successfully.",
     CHILD_DELETED_SUCCESS: 'Child deleted successfully.',
     USER_ASSOCIATED_SUCCESS: "User associated successfully.",
+    INVITE_EXISTS: 'Invite already exists! Please resend the invite instead.',
+    INVITE_EXISTS_EXCEPTION: 'InviteExistException',
+    INVITE_SENT_SUCCESS: "Invite sent successfully.",
+    INVITES_FETCH_SUCCESS: 'Invites fetched successfully.',
+    INVITE_FETCH_SUCCESS: 'Invite details fetched successfully.',
+    INVITE_DELETED_SUCCESS: 'Invite deleted successfully.',
+    INVITE_DELETED_FAILURE: 'Invite deleted failed.',
+
 }
