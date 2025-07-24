@@ -1,7 +1,5 @@
 'use strict';
 
-const { hashSync, compareSync } = require('bcrypt');
-
 const dayjs = require('dayjs');
 const { randomBytes } = require('node:crypto');
 
@@ -28,7 +26,7 @@ const {
 } = require('../messages');
 
 const { checkIfUserExists } = userHelper;
-const { Op, where, col, fn } = db.Sequelize;
+const { Op } = db.Sequelize;
 
 /**
  * Send invite to the users via email
@@ -250,7 +248,10 @@ const resendInvite = async (req, res, next) => {
 			attributes: ['id', 'firstName', 'lastName', 'email', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
 			where: {
 				id: inviteId,
-				ownerId
+				ownerId,
+				status: {
+					[Op.ne]: 'accepted'
+				}
 			}
 		});
     if (!invite) { return res.response(INVITE_INVALID, {}, 404, INVITE_INVALID_EXCEPTION, false); }
@@ -261,15 +262,14 @@ const resendInvite = async (req, res, next) => {
 			ownerName: userInfo.fullName,
 			email: invite.email,
 		};
-		// return res.json({ mailData, invite, inviteId });
 
 		const updated = await invite.update({
+			status: 'pending',
 			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
 		});
 		await mailHelper.sendInviteEmail(mailData);
 
     return res.response(INVITE_SENT_SUCCESS, updated);
-
 	} catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
 	}

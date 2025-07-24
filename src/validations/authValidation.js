@@ -37,9 +37,13 @@ const signupValidation = async (req, res, next) => {
 				ROLES.COACH_HEAD,
 				ROLES.COACH,
 				ROLES.PARENT,
-				ROLES.CHILD,
 				ROLES.INDIVIDUAL,
 			).required(),
+		}),
+		token: Joi.when('source', {
+			is: 'self',
+			then: Joi.forbidden(),
+			otherwise: Joi.string().required(),
 		}),
 		organizationName: Joi.string().max(256).optional(),
 	});

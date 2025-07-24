@@ -48,12 +48,16 @@ const { Op, where, col, fn } = db.Sequelize;
  */
 const signup = async (req, res, next) => {
   const request = req.body;
-
+	let invite;
   try {
     const emailExists = await checkIfUserExists(request.email, 'email');
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
     // const phoneExists = await checkIfUserExists(request.phone, 'phone');
     // if (phoneExists) { return res.response(PHONE_EXISTS, {}, 409, PHONE_EXISTS_EXCEPTION, false); }
+		if (request?.source === 'invite') {
+			invite = await checkIfValidInvite(request.email, request.token);
+		}
+		return res.json({ invite, emailExists, request });
     
     const password = await hashSync(request.password, SALT_ROUNDS);
 
@@ -90,6 +94,13 @@ const signup = async (req, res, next) => {
   }
 };
 
+/**
+ * Save the OTP in userOtps table
+ * 
+ * @param {number} userId 
+ * @param {string} otpType 
+ * @returns {Object}
+ */
 const saveOTP = async (userId, otpType) => {
   const otp = generateOtp();
   const userOtpCreated = await db.UserOtps.create({ userId, otp, otpType });
@@ -168,6 +179,28 @@ const resendRegistrationOtp = async (req, res, next) => {
 
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+const checkIfValidInvite = async (email, token) => {
+	try {
+		return await db.Invites.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
+			where: { email, token },
+			include: [{
+				model: db.Users,
+				as: 'sentByUser',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName'],
+			}, {
+				model: db.Users,
+				as: 'inviteOwner',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName'],
+			}]
+		});
+	} catch (error) {
+		throw error;
 	}
 };
 

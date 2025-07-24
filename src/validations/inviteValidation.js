@@ -2,7 +2,6 @@
 
 /** @type {import('joi')} */
 const Joi = require('joi').extend(require('@joi/date'));
-// const { ErrorHandler } = require('../helpers');
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
 const { ROLES } = require('../constants');
 
