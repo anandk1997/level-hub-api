@@ -224,6 +224,7 @@ const signin = async (req, res, next) => {
 				'lastName',
 				'email',
 				'password',
+				'fullName'
 			],		
 			where: {
 				[Op.or]: [
@@ -259,7 +260,7 @@ const signin = async (req, res, next) => {
 
 		const userData = {
 			id: user.id,
-			fullName: `${user.firstName} ${user.lastName}`.trim(),
+			fullName: user.fullName,
 			email: user.email,
 			role: user?.Role?.name,
 		};
