@@ -35,6 +35,7 @@ const {
     TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
+    COACH_MANAGE,
   }
 } = require('../../constants');
 

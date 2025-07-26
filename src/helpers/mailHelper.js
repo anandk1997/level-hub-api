@@ -120,8 +120,44 @@ const sendInviteEmail = async (mailData) => {
 	}
 };
 
+
+/**
+ * Send invite acceptance email to owner
+ *
+ * @param {Object} mailData
+ * @param {string} mailData.fullName
+ * @param {string} mailData.inviteeName
+ * @param {string} mailData.email
+ */
+const sendInviteAcceptanceMail = async (mailData) => {
+	try {
+		const mailer = new Mailer();
+
+		let mailText = `Hi ${mailData.fullName} \n\nGood news — ${mailData.inviteeName} has just accepted your invitation and successfully created their account.`;
+
+		let mailHtml =
+			`<b>Hi ${mailData.fullName},</b><br/><br/>
+			Good news — ${mailData.inviteeName} has just accepted your invitation and successfully created their account.`;
+
+		const mailDetails = {
+			to: mailData.email,
+			subject: `${mailData.inviteeName} Has Accepted Your Invitation`, // Subject line
+			text: mailText, // plain text body
+			html: mailHtml, // html body
+			priority: "high",
+			useTemplate: true,
+			sendBCC: false,
+		};
+		return await mailer.sendMail(mailDetails);
+	} catch (error) {
+		console.log("ERROR in sendInviteAcceptanceMail : ", error);
+		throw error;
+	}
+};
+
 module.exports = {
 	sendLevelUpEmail,
   sendLevelUpEmailToParent,
 	sendInviteEmail,
+	sendInviteAcceptanceMail,
 }

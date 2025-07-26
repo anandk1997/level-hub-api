@@ -13,7 +13,7 @@ const Auth = require('../middlewares/auth');
 const dayjs = require('dayjs');
 
 const { db } = require('../db');
-const { userHelper, Mailer } = require('../helpers');
+const { userHelper, Mailer, mailHelper } = require('../helpers');
 const { generateOtp } = require('../utils');
 const {
   EMAIL_EXISTS,
@@ -33,7 +33,9 @@ const {
 	RESENT_OTP_SUCCESS,
 	RESET_CODE_SUCCESS,
 	PASSWORD_UPDATE_SUCCESS,
-	RESET_CODE_VERIFIED
+	RESET_CODE_VERIFIED,
+	INVITE_INVALID,
+	INVITE_INVALID_EXCEPTION
 } = require('../messages.js');
 
 const { checkIfUserExists } = userHelper;
@@ -50,15 +52,14 @@ const signup = async (req, res, next) => {
   const request = req.body;
 	let invite;
   try {
+		if (request?.source === 'invite') {
+			invite = await checkIfValidInvite(request.email, request.token, request.type);
+		}
     const emailExists = await checkIfUserExists(request.email, 'email');
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
     // const phoneExists = await checkIfUserExists(request.phone, 'phone');
     // if (phoneExists) { return res.response(PHONE_EXISTS, {}, 409, PHONE_EXISTS_EXCEPTION, false); }
-		if (request?.source === 'invite') {
-			invite = await checkIfValidInvite(request.email, request.token);
-		}
-		return res.json({ invite, emailExists, request });
-    
+    if (!invite) { return res.response(INVITE_INVALID, {}, 410, INVITE_INVALID_EXCEPTION, false); }
     const password = await hashSync(request.password, SALT_ROUNDS);
 
     const role = await db.Roles.findOne({
@@ -77,6 +78,7 @@ const signup = async (req, res, next) => {
       dob: request.dob || null,
       roleId: role.id,
 			isPrimaryAccount: request?.source === 'self',
+			ownerId: request?.source === 'invite' && invite?.ownerId ? invite?.ownerId : null
     };
 
     const result = await db.Users.create(user);
@@ -87,11 +89,44 @@ const signup = async (req, res, next) => {
 			isVerified: false,
 			registrationSource: request.source
 		});
+		if (request?.source === 'invite' && invite) {
+			const inviteMailData = {
+				fullName: invite?.inviteOwner.fullName,
+				inviteeName: result.fullName,
+				email: invite?.inviteOwner?.email,
+			};
+			await invite.update({ status: 'accepted', userId: result.id });
+			await mailHelper.sendInviteAcceptanceMail(inviteMailData)
+		}
     await sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
     return res.response(SIGNUP_SUCCESS, {}, 201);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
+};
+
+
+const checkIfValidInvite = async (email, token, role) => {
+	try {
+		return await db.Invites.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
+			where: {
+				email,
+				token,
+				role,
+				expiryDate: { [Op.gte]: dayjs().toDate() },
+				status: 'pending',
+			},
+			include: {
+				model: db.Users,
+				as: 'inviteOwner',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName', 'email'],
+			}
+		});
+	} catch (error) {
+		throw error;
+	}
 };
 
 /**
@@ -179,28 +214,6 @@ const resendRegistrationOtp = async (req, res, next) => {
 
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });
-	}
-};
-
-const checkIfValidInvite = async (email, token) => {
-	try {
-		return await db.Invites.findOne({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
-			where: { email, token },
-			include: [{
-				model: db.Users,
-				as: 'sentByUser',
-				required: true,
-				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}, {
-				model: db.Users,
-				as: 'inviteOwner',
-				required: true,
-				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}]
-		});
-	} catch (error) {
-		throw error;
 	}
 };
 
