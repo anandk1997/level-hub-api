@@ -59,7 +59,7 @@ const signup = async (req, res, next) => {
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
     // const phoneExists = await checkIfUserExists(request.phone, 'phone');
     // if (phoneExists) { return res.response(PHONE_EXISTS, {}, 409, PHONE_EXISTS_EXCEPTION, false); }
-    if (!invite) { return res.response(INVITE_INVALID, {}, 410, INVITE_INVALID_EXCEPTION, false); }
+    if (request?.source === 'invite' && !invite) { return res.response(INVITE_INVALID, {}, 410, INVITE_INVALID_EXCEPTION, false); }
     const password = await hashSync(request.password, SALT_ROUNDS);
 
     const role = await db.Roles.findOne({
