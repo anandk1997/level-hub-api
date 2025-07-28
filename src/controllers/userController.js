@@ -195,12 +195,10 @@ const fetchUsers = async (req, res, next) => {
 				return { [column]: { [Op.iLike]: '%' + search + '%' } };
 			});
 			const fullNameSearch = where(
-				literal(`LOWER("firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END)`),
-				{
-					[Op.iLike]: search
-				}
+				literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
+				{ [Op.iLike]: '%' + search + '%' }
 			);
-			likeSearch = { [Op.or]: [...likeColumns] };
+			likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
 
 		}
 
