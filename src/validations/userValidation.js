@@ -3,6 +3,18 @@
 /** @type {import('joi')} */
 const Joi = require('joi').extend(require('@joi/date'));
 const { VALIDATION_ERROR_EXCEPTION } = require('../messages');
+const {
+	USER_ASSOCIATIONS: {
+		GYM_COACH,
+		ORGANIZATION_USER,
+		PARENT_CHILD
+	},
+	ROLES: {
+		PARENT,
+		CHILD,
+		INDIVIDUAL
+	}
+} = require('../constants');
 
 /**
  * Update user profile schema validation
@@ -135,6 +147,54 @@ const resetChildPasswordValidation = async (req, res, next) => {
 	}
 };
 
+/**
+ * Fetch associated users schema validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchAssociatedValidation = async (req, res, next) => {
+	const schema = Joi.object({
+		relation: Joi.string().valid(GYM_COACH, ORGANIZATION_USER, PARENT_CHILD).optional()
+	});
+	try {
+		await schema.validateAsync(req.query);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
+
+/**
+ * Fetch Activities schema validation
+ *
+ * @async
+ * @function fetchActivitiesValidation
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchUsersValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+  const schema = Joi.object({
+    role: Joi.string().valid(PARENT, CHILD, INDIVIDUAL, "ALL").optional(),
+    search: Joi.string().max(255).optional().allow(""),
+    sort: Joi.string().valid("ASC", "DESC").optional(),
+    sortBy: Joi.string().valid("fullName", "email", 'role').optional(),
+    page: Joi.number().integer().strict().min(1).optional(),
+    pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
+    // assigneeId: Joi.number().integer().positive().optional(),
+  });
+  try {
+    await schema.validateAsync(req.body);
+    next();
+  } catch (error) {
+    return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+  }
+};
+
+
 
 module.exports = {
 	updateProfileValidation,
@@ -142,4 +202,6 @@ module.exports = {
 	childAccountValidation,
 	updateChildValidation,
 	resetChildPasswordValidation,
+	fetchAssociatedValidation,
+	fetchUsersValidation,
 };

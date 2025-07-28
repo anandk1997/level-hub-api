@@ -8,7 +8,7 @@ const {
   APP_NAME,
   OTP_VALIDITY,
 	PASS_RESET_OTP,
-} = require('../../config.js');
+} = require('../../config');
 const Auth = require('../middlewares/auth');
 const dayjs = require('dayjs');
 
@@ -36,7 +36,12 @@ const {
 	RESET_CODE_VERIFIED,
 	INVITE_INVALID,
 	INVITE_INVALID_EXCEPTION
-} = require('../messages.js');
+} = require('../messages');
+const {
+	USER_ASSOCIATIONS: {
+		ORGANIZATION_USER
+	}
+} = require('../constants');
 
 const { checkIfUserExists } = userHelper;
 const { Op, where, col, fn } = db.Sequelize;
@@ -96,6 +101,11 @@ const signup = async (req, res, next) => {
 				email: invite?.inviteOwner?.email,
 			};
 			await invite.update({ status: 'accepted', userId: result.id });
+			await db.UserAssociations.create({
+				primaryUserId: invite?.ownerId,
+				associatedUserId: result.id,
+				relationType: ORGANIZATION_USER
+			});
 			await mailHelper.sendInviteAcceptanceMail(inviteMailData)
 		}
     await sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });

@@ -137,7 +137,7 @@ const sendInviteAcceptanceMail = async (mailData) => {
 
 		let mailHtml =
 			`<b>Hi ${mailData.fullName},</b><br/><br/>
-			Good news — ${mailData.inviteeName} has just accepted your invitation and successfully created their account.`;
+			Good news — <b>${mailData.inviteeName}</b> has just accepted your invitation and successfully created their account.`;
 
 		const mailDetails = {
 			to: mailData.email,

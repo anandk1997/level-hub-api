@@ -35,7 +35,6 @@ const {
     TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
-    COACH_MANAGE,
   }
 } = require('../../constants');
 
@@ -96,7 +95,8 @@ router.route("/child")
 router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
 
-router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
+router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
+router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
 
 // INVITE 
 router.route("/invite")

@@ -28,9 +28,11 @@ const {
 	ROLE_NOT_EXISTS_EXCEPTION,
 	CHILD_CREATE_SUCCESS,
 	USER_ASSOCIATED_SUCCESS,
+	USERS_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 
+const { literal, Op, where } = db.Sequelize;
 
 /**
  * API to fetch user profile
@@ -133,7 +135,8 @@ const changePassword = async (req, res, next) => {
  */
 const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		const userId = req.userId, relation = req?.params?.relation, userInfo = req.user;
+		const relation = req?.query?.relation, userInfo = req.user;
+		const ownerId = userInfo?.ownerId || userInfo?.userId;
 		let currentUser;
 		if (userInfo.role === PARENT_OWNER) {
 			currentUser = {
@@ -145,7 +148,7 @@ const fetchAssociatedUsers = async (req, res, next) => {
 				lastName: userInfo.lastName,
 			};
 		}
-		let associatedUsers = await userHelper.fetchUsersAssociated(userId, relation);
+		let associatedUsers = await userHelper.fetchUsersAssociated(ownerId, relation);
 		if (currentUser?.id) {
 			associatedUsers = [
 				currentUser,
@@ -153,6 +156,93 @@ const fetchAssociatedUsers = async (req, res, next) => {
 			];
 		}
 		return res.response(USER_ASSOCIATED_SUCCESS, { associatedUsers });
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * API to fetch user listing
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchUsers = async (req, res, next) => {
+	try {
+		let { page = 1, pageSize = 10, role, sortBy = 'fullName', sort = 'ASC', search = '' } = req.body, userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+    const pageOffset = pageSize * (page - 1);
+		search = search.trim().toLowerCase();
+
+		let roleWhere = {}, orderBy = [];
+		if (role !== "ALL") {
+			roleWhere = { ...roleWhere, name: role }
+		}
+		if (sortBy === 'fullName') {
+			orderBy = [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)];
+		} else if (sortBy === 'role') {
+			orderBy = [db.Roles, 'name']
+		} else {
+			orderBy = [sortBy];
+		}
+		const order = [...orderBy, sort];
+
+		const searchColumns = ['email', 'username', 'firstName'];
+		let likeSearch = {};
+		if (search !== '') {
+			const likeColumns = searchColumns.map(column => {
+				return { [column]: { [Op.iLike]: '%' + search + '%' } };
+			});
+			const fullNameSearch = where(
+				literal(`LOWER("firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END)`),
+				{
+					[Op.iLike]: search
+				}
+			);
+			likeSearch = { [Op.or]: [...likeColumns] };
+
+		}
+
+		// return res.json({ role, page, pageSize, pageOffset, userInfo });
+
+		const target = await db.Targets.findOne({
+      attributes: ['id', 'targetXP'],
+      where: { userId: ownerId },
+    });
+
+		const { count, rows } = await db.Users.findAndCountAll({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'profileImage'],
+			where: {
+				ownerId,
+				...likeSearch
+			},
+			include: [{
+				attributes: ['name'],
+				model: db.Roles,
+				where: roleWhere,
+			}, {
+				model: db.UserProgress,
+				attributes: ['id', 'userId', 'currentXP'],
+				subQuery: false
+			}],
+			limit: pageSize,
+      offset: pageOffset,
+      order: [order],
+      subQuery: false
+		});
+
+		const users = rows.map(user => {
+			const userInfo = {
+				...user.dataValues,
+				targetXP: target?.targetXP,
+        currentXP: user?.UserProgress?.currentXP,
+	      level: target?.targetXP && user?.UserProgress?.currentXP ? Math.floor(user?.UserProgress?.currentXP / target?.targetXP) : 0
+			};
+			delete userInfo.UserProgress;
+			return userInfo;
+		});
+		return res.response(USERS_FETCH_SUCCESS, { count, users });
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });
 	}
@@ -520,4 +610,5 @@ module.exports = {
 	updateUserProfile,
 	changePassword,
 	fetchAssociatedUsers,
+	fetchUsers,
 };
