@@ -35,6 +35,7 @@ const {
     TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
+    CHILD_MANAGE,
   }
 } = require('../../constants');
 
@@ -88,15 +89,16 @@ router.route("/profile")
 
 // CHILD MANAGEMENT
 router.route("/child")
-  .all(checkPermssion(SUBACCOUNT_MANAGE))
+  .all(checkPermssion(CHILD_MANAGE))
   .post(userValidation.childAccountValidation, childCtrl.createChildAccount)
   .put(userValidation.updateChildValidation, childCtrl.updateChild)
   .get(childCtrl.fetchChildren);
-router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
-router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
+router.put("/child/password/reset", checkPermssion(CHILD_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
+router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild);
 
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
 router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
+router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), userCtrl.fetchUserDetails);
 
 // INVITE 
 router.route("/invite")

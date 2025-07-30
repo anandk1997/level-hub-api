@@ -28,13 +28,14 @@ const {
 	},
 	USER_ASSOCIATIONS: {
 		PARENT_CHILD,
+		ORGANIZATION_USER
 	}
 } = require('../constants');
 const {
 	MAX_CHILD_LIMIT
 } = require('../../config');
 
-const { sequelize, } = db;
+const { sequelize } = db;
 
 
 /**
@@ -46,7 +47,8 @@ const { sequelize, } = db;
  */
 const createChildAccount = async (req, res, next) => {
 	try {
-		const request = req.body, userId = req.userId;
+		const request = req.body, userId = req.userId, userInfo = req.user;
+    const ownerId = userInfo.ownerId || userInfo.userId;
 		const usernameExists = await checkIfUserExists(request.username, 'username');
     if (usernameExists) { return res.response(USERNAME_EXISTS, {}, 409, USERNAME_EXISTS_EXCEPTION, false); }
 
@@ -80,7 +82,7 @@ const createChildAccount = async (req, res, next) => {
 				dob: request?.dob || null,
 				roleId: role.id,
 				isPrimaryAccount: false,
-				ownerId: userId,
+				ownerId: ownerId,
 			};
    		const userResult = await db.Users.create(user, { transaction: t });
 
@@ -91,13 +93,7 @@ const createChildAccount = async (req, res, next) => {
 			}, {
 				transaction: t
 			});
-			await db.UserAssociations.create({
-				primaryUserId: userId,
-				associatedUserId: userResult.id,
-				relationType: PARENT_CHILD
-			}, {
-				transaction: t
-			});
+			await insertAssociations(userId, userInfo?.ownerId, userResult?.id, t);
 			await db.UserProgress.create({ userId: userResult.id, currentXP: 0 }, { transaction: t });
 
 		});
@@ -117,8 +113,8 @@ const createChildAccount = async (req, res, next) => {
 const fetchChildren = async (req, res, next) => {
 	try {
 		const userId = req.userId, userInfo = req.user;
+    const primaryUserId = userInfo.ownerId || userInfo.userId;
     // const primaryUserId = await fetchPrimaryUser(userId, userInfo, PARENT_CHILD);
-    const primaryUserId = userId;
 
 		const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],
@@ -233,6 +229,38 @@ const deleteChild = async (req, res, next) => {
     return res.response(CHILD_DELETED_SUCCESS, result);
 	} catch (error) {
 		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
+/**
+ * Bulk insert the associations of a child
+ *
+ * @param {number} parentId
+ * @param {number} ownerId
+ * @param {number} childId
+ * @param {import('sequelize').Transaction} t
+ * @returns {Promise<any>}
+ */
+const insertAssociations = async (parentId, ownerId, childId, t) => {
+	try {
+		let associations = [{
+			primaryUserId: parentId,
+			associatedUserId: childId,
+			relationType: PARENT_CHILD
+		}];
+		if (ownerId !== parentId) {
+			associations = [
+				...associations,
+				{
+					primaryUserId: ownerId,
+					associatedUserId: childId,
+					relationType: ORGANIZATION_USER
+				}
+			]
+		}
+		return await db.UserAssociations.bulkCreate(associations, { transaction: t });
+	} catch (error) {
+		throw error;
 	}
 };
 

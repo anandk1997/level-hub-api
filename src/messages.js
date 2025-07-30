@@ -93,4 +93,5 @@ module.exports = {
     INVITE_EXPIRED: "Invite is expired!",
     INVITE_EXPIRED_EXCEPTION: 'InviteExpiredException',
     USERS_FETCH_SUCCESS: "User listing fetched successfully.",
+    USER_FETCH_SUCCESS: "User details fetched successfully.",
 }

@@ -10,7 +10,10 @@ const {
 		PARENT_CHILD,
 	},
 	ROLES: {
-		PARENT_OWNER
+		PARENT_OWNER,
+		PARENT,
+		INDIVIDUAL,
+		INDIVIDUAL_OWNER
 	}
 } = require('../constants');
 const { db } = require('../db');
@@ -29,6 +32,7 @@ const {
 	CHILD_CREATE_SUCCESS,
 	USER_ASSOCIATED_SUCCESS,
 	USERS_FETCH_SUCCESS,
+	USER_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 
@@ -136,8 +140,9 @@ const changePassword = async (req, res, next) => {
 const fetchAssociatedUsers = async (req, res, next) => {
 	try {
 		const relation = req?.query?.relation, userInfo = req.user;
-		const ownerId = userInfo?.ownerId || userInfo?.userId;
-		let currentUser;
+		let ownerId = userInfo?.ownerId || userInfo?.userId, currentUser;
+		const parentRole = [PARENT_OWNER, PARENT];
+		if (parentRole.includes(userInfo.role)) { ownerId = userInfo?.userId }
 		if (userInfo.role === PARENT_OWNER) {
 			currentUser = {
 				id: userInfo.userId,
@@ -162,6 +167,50 @@ const fetchAssociatedUsers = async (req, res, next) => {
 };
 
 /**
+ * Generates filter, sorting, and search criteria for querying user listing
+ *
+ * @param {string} role
+ * @param {string} sortBy
+ * @param {string} sort
+ * @param {string} search
+ * @returns {Promise<{ likeSearch: object, order: Array, roleWhere: object }>}
+ */
+const setUsersFilter = async (role, sortBy, sort, search) => {
+	search = search.trim().toLowerCase();
+
+	let roleWhere = {}, orderBy = [];
+	if (role !== "ALL") {
+		roleWhere = { ...roleWhere, name: role }
+	}
+	if (sortBy === 'fullName') {
+		orderBy = [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)];
+	} else if (sortBy === 'role') {
+		orderBy = [db.Roles, 'name']
+	} else {
+		orderBy = [sortBy];
+	}
+	const order = [...orderBy, sort];
+
+	const searchColumns = ['email', 'username', 'firstName'];
+	let likeSearch = {};
+	if (search !== '') {
+		const likeColumns = searchColumns.map(column => {
+			return { [column]: { [Op.iLike]: '%' + search + '%' } };
+		});
+		const fullNameSearch = where(
+			literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
+			{ [Op.iLike]: '%' + search + '%' }
+		);
+		likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
+	}
+	return {
+		likeSearch,
+		order,
+		roleWhere
+	}
+};
+
+/**
  * API to fetch user listing
  *
  * @param {import('express').Request} req
@@ -170,39 +219,11 @@ const fetchAssociatedUsers = async (req, res, next) => {
  */
 const fetchUsers = async (req, res, next) => {
 	try {
-		let { page = 1, pageSize = 10, role, sortBy = 'fullName', sort = 'ASC', search = '' } = req.body, userInfo = req.user;
+		let { page = 1, pageSize = 10, role = "ALL", sortBy = 'fullName', sort = 'ASC', search = '' } = req.body, userInfo = req.user;
 		const ownerId = userInfo.ownerId || userInfo.userId;
     const pageOffset = pageSize * (page - 1);
-		search = search.trim().toLowerCase();
 
-		let roleWhere = {}, orderBy = [];
-		if (role !== "ALL") {
-			roleWhere = { ...roleWhere, name: role }
-		}
-		if (sortBy === 'fullName') {
-			orderBy = [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)];
-		} else if (sortBy === 'role') {
-			orderBy = [db.Roles, 'name']
-		} else {
-			orderBy = [sortBy];
-		}
-		const order = [...orderBy, sort];
-
-		const searchColumns = ['email', 'username', 'firstName'];
-		let likeSearch = {};
-		if (search !== '') {
-			const likeColumns = searchColumns.map(column => {
-				return { [column]: { [Op.iLike]: '%' + search + '%' } };
-			});
-			const fullNameSearch = where(
-				literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
-				{ [Op.iLike]: '%' + search + '%' }
-			);
-			likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
-
-		}
-
-		// return res.json({ role, page, pageSize, pageOffset, userInfo });
+		const { likeSearch, order, roleWhere } = await setUsersFilter(role, sortBy, sort, search);
 
 		const target = await db.Targets.findOne({
       attributes: ['id', 'targetXP'],
@@ -246,200 +267,37 @@ const fetchUsers = async (req, res, next) => {
 	}
 };
 
-
-
 /**
- * Fetch user listing
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- * @returns {JSON}
+ * API to fetch user details
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const get_users = async (req, res, next) => {
-	let request = {};
-	request.orderBy    	= (req.body.orderBy !== undefined  && req.body.orderBy !== "") ? req.body.orderBy : 'id';
-	request.order   		= (req.body.order !== undefined && req.body.order !== "") ? req.body.order : 'ASC';
-	request.pageSize 		= (req.body.pageSize !== undefined) ? req.body.pageSize : 10;
-	request.pageOffset 	= (req.body.pageOffset !== undefined && req.body.pageOffset !== null) ? req.body.pageOffset : 0;
-	request.searchText 	= (req.body.searchText !== undefined) ? req.body.searchText : '';
-
-	const searchColumns = ['name', 'email', 'city', 'state', 'rentAmount', 'apartmentName'];
-	let likeSearch = {};
-	if (request.searchText !== '') {
-		const likeColumns = searchColumns.map(column => {
-			return { [column]: { [Op.like]: '%' + request.searchText + '%' } };
-		});
-		likeSearch = { [Op.or]: likeColumns };
-	}
-	let order = [request.orderBy, request.order];
-	/* if (request.orderBy === "user_paid_plans") { 
-		order = ['user_paid_plans', request.orderBy, request.order];
-	} */
-	
+const fetchUserDetails = async (req, res, next) => {
 	try {
-		// const currentDateTime = moment().toDate();
-		let result = await db.users.findAndCountAll({
-			attributes: ['id', 'name', 'email', 'city', 'state', 'rentAmount', 'apartmentName', 'createdAt', 'updatedAt'],
+    const userId = parseInt(req?.params?.id), userInfo = req.user;;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+		const user = await db.Users.findOne({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'profileImage', 'phone', 'gender', 'dob'],
 			where: {
-				...likeSearch,
-				role: { [Op.not]: 'admin' },
+				id: userId,
+				ownerId,
 			},
-			/* include: {
-				model: UserPaidPlans,
-				on: {
-					col1: where(col("user_paid_plans.user_id"), "=", col("users.id")),
-					col2: where(col("user_paid_plans.end_date"), ">=", currentDateTime),
-					col3: where(col("user_paid_plans.is_active"), "=", true)
-				},
-			}, */
-			order: [order],
-			offset: request.pageOffset,
-			limit: request.pageSize,
-		});
-		return res.json({ success: true, message: 'Fetched users successfully!', data: result });
-	} catch (error) {
-		return next(new ErrorHandler(500, config.common_err_msg, error));
-	}
-};
-
-const get_user_filter = async (req, res, next) => {
-	try {
-		let result = await db.users.findAll({
-			attributes: ['id', 'name'],
-			where: {
-				role: 'user',
-			},
-			order: [[ 'name', 'ASC' ]],
-		});
-		return res.json({ success: true, message: 'Fetched user filter successfully!', data: result });
-	} catch (error) {
-		return next(new ErrorHandler(500, config.common_err_msg, error));		
-	}
-};
-
-/**
- * Add update user
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const save_user = async (req, res, next) => {
-	const uploadDir = 'assets/profile_images/';
-	let form = new IncomingForm();
-	
-	form.uploadDir = uploadDir;		//set upload directory
-	form.keepExtensions = true;		//keep file extension
-	
-	form.parse(req, async (err, fields, files) => {
-		if (err) { return next(new ErrorHandler(500, config.common_err_msg, err)); }
-		// const userId = req.user_id;
-		let filePath = (files && files.file) ? files.file.path : null;
-		let filename = (filePath) ? filePath.replace(uploadDir, '') : null;
-		if (!fields.first_name || !fields.email) { delete_file(filePath); return next(new ErrorHandler(400, 'Missing required name or label fields')); }
-		fields.first_name = fields.first_name.trim();
-		fields.email = fields.email.trim();
-		fields.profile_image = filename;
-
-		// return res.json({ success: false, message: 'User created successfully!', fields });
-		try {
-			const userId = (fields.type == 'edit' && fields.id !== undefined) ? fields.id : false;
-			let ifExist = await check_if_email_exist(fields.email, userId, next);
-			if (ifExist) {
-				return res.json({ success: false, message: 'Email already exists!' });
-			}
-
-			let user = {
-				first_name	: fields.first_name,
-				last_name	: fields.last_name,
-				email		: fields.email,
-				mobile		: fields.mobile,
-			};
-			if (fields.type == 'add') {
-				user.password = await bcrypt.hashSync(fields.password, saltRounds);
-				user.profile_image = fields.profile_image;
-				const result = await User.create(user);
-				return res.json({ success: true, message: 'User created successfully!', result });
-			} else {
-				const result = await User.update(user, { where: { id: fields.id } });
-				return res.json({ success: true, message: 'User updated successfully!', result });
-			}
-		} catch (error) {
-			delete_file(filePath);
-			next(new ErrorHandler(200, config.common_err_msg, error));
-		}		
-	});	
-	form.on('error', (err) => {
-		return next(new ErrorHandler(500, config.common_err_msg, err));
-	});
-};
-
-/**
- * send otp on sign up
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */ 
-const send_otp = async (req, res, next) => {
-		const userId = (req.body.type == 'edit' && req.body.id !== undefined) ? req.body.id : false;
-		let ifExist = await check_if_email_exist(req.body.email, userId, next);
-		if (ifExist) {
-			return res.json({ success: false, message: 'Email already exists!' });
-		}
-		let otp = Math.floor(Math.random() * 100000000);
-		try {
-			const mailer = new Mailer();
-			//const resetLink = config.site_url + 'reset-pasword/' + mailData.hash;
-
-			let mailText = 'Otp for signup -'+otp;
-			mailText += "\n\n\nThanks and Regards\n" + config.smtp.fromAlias;
-
-			let mailHtml = "<b>Otp for signup -"+otp+"</b>";
-			mailHtml += "<br/><br/><br/><b>Thanks and Regards<br/>" + config.smtp.fromAlias + "</b>";
-
-			const mailDetails = {
-				to: req.body.email,
-				// to: 'kanishkgupta55@gmail.com',
-				subject: 'OTP For Signup', // Subject line
-				text: mailText, // plain text body
-				html: mailHtml, // html body
-			};
-			mailer.sendMail(mailDetails);
-		
-			/*mailgun.messages().send(data, function (error, body) {
-			  console.log(body);
-			});*/
-			return res.json({ success: true,otp: otp});			
-		} catch (error) {
-			
-			next(new ErrorHandler(200, config.common_err_msg, error));
-		}
-};
-
-/**
- * Fetch user details
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const get_user_details = async (req, res, next) => {
-	const userId = parseInt(req.params.id);
-	try {
-		const result = await db.users.findOne({
-			attributes: ['id', 'name', 'email', 'address', 'city', 'state', 'zip', 'apartmentName', 'rentAmount', 'impactReason', 'profileImage', 'createdAt'],
-			where: { id: userId, role: { [Op.not]: 'admin' } },
 			include: {
-				model: db.applications
-			}
+				attributes: ['name'],
+				model: db.Roles,
+			},
+      subQuery: false
 		});
-		return res.json({ success: true, message: 'Fetched user details successfully!', data: { userDetails: result } });
+
+		return res.response(USER_FETCH_SUCCESS, { user });
 	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
+
 
 
 /**
@@ -512,58 +370,6 @@ const delete_file = (filepath) => {
 };
 
 
-
-
-
-/**
- * Update user profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
- const update_user_profile = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		// return res.json({ request, userId })
-		const user = {
-			name					: request.name,
-			address				: request.address,
-			city					: request.city,
-			state					: request.state,
-			zip						: request.zip,
-			apartmentName	: request.apartmentName,
-			unitNumber		: request.unitNumber ? request.unitNumber : null,
-			rentAmount		: request.rentAmount,
-			impactReason	: request.impactReason,
-			
-		};
-		// return res.json({ success: false, message: 'Fetch user profile successfully!', request, userId, user });		
-		let result = await db.users.update(user, { where: { id: userId } }); // , logging: console.log
-		return res.json({ success: true, message: 'Updated profile successfully!', result });
-	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
-};
-
-/**
- * Update user profile password
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const update_user_password = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		const passwordHash = await bcrypt.hashSync(request.password, saltRounds);
-		await db.users.update({ password: passwordHash }, { where: { id: userId, role: 'user' } });
-		return res.json({ success: true, message: 'Updated password successfully!' });
-	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
-};
-
 /**
  * Update profile image
  * 
@@ -609,4 +415,5 @@ module.exports = {
 	changePassword,
 	fetchAssociatedUsers,
 	fetchUsers,
+	fetchUserDetails,
 };

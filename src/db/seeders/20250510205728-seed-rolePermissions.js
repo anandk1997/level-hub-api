@@ -39,12 +39,12 @@ module.exports = {
       { roleId: 6, permissionId: 3 },
       { roleId: 6, permissionId: 4 },
       { roleId: 6, permissionId: 5 },
-      { roleId: 6, permissionId: 7 },
       { roleId: 6, permissionId: 9 },
+      { roleId: 6, permissionId: 10 },
 
       { roleId: 7, permissionId: 1 },
       { roleId: 7, permissionId: 4 },
-      { roleId: 7, permissionId: 7 },
+      { roleId: 7, permissionId: 10 },
 
       { roleId: 8, permissionId: 1 },
       { roleId: 8, permissionId: 4 },
