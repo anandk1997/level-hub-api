@@ -104,7 +104,8 @@ const signup = async (req, res, next) => {
 			await db.UserAssociations.create({
 				primaryUserId: invite?.ownerId,
 				associatedUserId: result.id,
-				relationType: ORGANIZATION_USER
+				relationType: ORGANIZATION_USER,
+				lastLoginAt: dayjs().toDate(),
 			});
 			await mailHelper.sendInviteAcceptanceMail(inviteMailData)
 		}
@@ -259,6 +260,7 @@ const signin = async (req, res, next) => {
 				model: db.UserConfig,
 				attributes: ['isVerified'],
 				required: true,
+				where: { isActive: true }
 			}, {
 				model: db.Roles,
 				attributes: ['name'],
@@ -271,6 +273,7 @@ const signin = async (req, res, next) => {
 					through: { attributes: [] },
 				}
 			}],
+			subQuery: false
 		});
 		
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }

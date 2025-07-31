@@ -111,5 +111,6 @@ router.route("/invite/:id")
   .get(inviteCtrl.fetchInviteDetails)
   .delete(inviteCtrl.deleteInvite);
 
+// router.route("/template/bulk/:id").get(templateCtrl.savePredefiendTemplates)
 
 module.exports = router;

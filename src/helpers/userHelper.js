@@ -28,7 +28,15 @@ const checkIfUserExists = async (value, field, userId = null, returnResult = fal
 		if (userId) {
 			where = { ...where, _id: { $ne: userId } };
 		}
-		const result = await db.Users.findOne({ where });
+		const result = await db.Users.findOne({
+			where,
+			include: {
+				model: db.UserConfig,
+				attributes: ['isActive', 'isVerified'],
+				required: true,
+				where: { isActive: true }
+			}
+		});
 		if (returnResult) { return result; }
 		return result ? true : false;
 	} catch (error) {

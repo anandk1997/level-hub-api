@@ -21,12 +21,12 @@ module.exports = {
       email: {
         type: Sequelize.STRING(128),
         allowNull: true,
-        unique: true
+        unique: false
       },
       username: {
         type: Sequelize.STRING(100),
         allowNull: true,
-        unique: true
+        unique: false
       },
       phone: {
         type: Sequelize.STRING(20),
@@ -73,12 +73,14 @@ module.exports = {
         }
       },
       createdAt: {
+        type: Sequelize.DATE,
         allowNull: false,
-        type: Sequelize.DATE
-      },
+        defaultValue: Sequelize.NOW
+      },  
       updatedAt: {
+        type: Sequelize.DATE,
         allowNull: false,
-        type: Sequelize.DATE
+        defaultValue: Sequelize.NOW
       }
     });
   },

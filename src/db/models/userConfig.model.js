@@ -2,6 +2,14 @@
 
 const { Model } = require('sequelize');
 
+/**
+ * @typedef {import('sequelize').Model} Model
+ * @typedef {import('sequelize').Sequelize} Sequelize
+ *
+ * @param {import('sequelize').Sequelize} sequelize
+ * @param {import('sequelize').DataType} DataTypes
+ * @returns {import('sequelize').Model}
+ */
 module.exports = (sequelize, DataTypes) => {
   class UserConfig extends Model {
     /**
@@ -36,6 +44,16 @@ module.exports = (sequelize, DataTypes) => {
       values: ['self', 'invite', 'subaccount'],
       defaultValue: 'self',
       allowNull: false,
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
+    lastLoginAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: DataTypes.NOW
     }
   }, {
     timestamps: true,
