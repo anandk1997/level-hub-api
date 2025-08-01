@@ -45,11 +45,6 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'self',
       allowNull: false,
     },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true
-    },
     lastLoginAt: {
       type: DataTypes.DATE,
       allowNull: true,

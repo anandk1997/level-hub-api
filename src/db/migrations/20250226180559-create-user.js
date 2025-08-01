@@ -72,6 +72,11 @@ module.exports = {
           onDelete: 'SET NULL'
         }
       },
+      isActive: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+      },
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,

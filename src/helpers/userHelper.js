@@ -24,7 +24,7 @@ const {
  */
 const checkIfUserExists = async (value, field, userId = null, returnResult = false) => {
 	try {
-		let where = { [field]: value };
+		let where = { [field]: value, isActive: true };
 		if (userId) {
 			where = { ...where, _id: { $ne: userId } };
 		}
@@ -32,9 +32,8 @@ const checkIfUserExists = async (value, field, userId = null, returnResult = fal
 			where,
 			include: {
 				model: db.UserConfig,
-				attributes: ['isActive', 'isVerified'],
+				attributes: ['isVerified'],
 				required: true,
-				where: { isActive: true }
 			}
 		});
 		if (returnResult) { return result; }
@@ -158,6 +157,7 @@ const fetchUsersAssociated = async (primaryUserId, relationType) => {
 		}
 		return await db.Users.findAll({
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
+			where: { isActive: true },
 			include: [{
 				model: db.UserAssociations,
 				as: 'associatedUser',

@@ -8,6 +8,7 @@ const {
   DASH_ALL_STATS_FETCH_SUCCESS,
   DASH_TODAY_STATS_FETCH_SUCCESS,
   DASH_LEADERBOARD_FETCH_SUCCESS,
+  DASH_USERS_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 const {
@@ -177,36 +178,71 @@ const fetchTodaysActivities = async (req, res, next) => {
  */
 const fetchLeaderboard = async (req, res, next) => {
   try {
-    const userId = req.userId, userInfo = req.user;
+    const userId = req.userId, userInfo = req.user, role = req.query.role;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+    const whereRoleName = role ? role : [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ];
+
     const target = await userHelper.fetchUserTarget(userId);
 
-    const leaderboard = await db.Users.findAll({
+    const users = await db.Users.findAll({
       attributes: ['id', 'firstName', 'lastName', 'fullName', 'email', 'username'],
       where: {
         [Op.or]: {
           id: userId,
-          ownerId: userId,
+          ownerId,
         }
       },
       include: [
         {
           model: db.UserProgress,
-          attributes: ['currentXP']
+          attributes: ['id', 'currentXP']
         },
         {
-          attributes: ['id', 'name'],
+          attributes: ['name'],
           model: db.Roles,
           where: {
-            name: [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ]
+            name: whereRoleName
           }
         }
       ],
       limit: 10,
       offset: 0,
-      order: [[{ model: db.UserProgress },'currentXP', 'DESC']],
+      order: [[{ model: db.UserProgress }, 'currentXP', 'DESC']],
       subQuery: false
     });
-    return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { leaderboard });
+    const leaderboard = users.map(user => {
+			const userInfo = {
+				...user.dataValues,
+				targetXP: target?.targetXP,
+        currentXP: user?.UserProgress?.currentXP,
+	      level: target?.targetXP && user?.UserProgress?.currentXP ? Math.floor(user?.UserProgress?.currentXP / target?.targetXP) : 0
+			};
+			delete userInfo.UserProgress;
+			return userInfo;
+		});
+    return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { role, leaderboard });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch all active users under an owner
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchActiveUsers = async (req, res, next) => {
+  try {
+		const ownerId = req.user?.ownerId || req.user?.userId;
+    const count = await db.Users.count({
+      where: {
+        ownerId,
+        isActive: true
+      },
+    });
+    return res.response(DASH_USERS_FETCH_SUCCESS, { count });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -217,4 +253,5 @@ module.exports = {
   fetchAllTimeActivities,
   fetchTodaysActivities,
   fetchLeaderboard,
+  fetchActiveUsers,
 }

@@ -105,7 +105,7 @@ const signup = async (req, res, next) => {
 				primaryUserId: invite?.ownerId,
 				associatedUserId: result.id,
 				relationType: ORGANIZATION_USER,
-				lastLoginAt: dayjs().toDate(),
+				lastLoginAt: null,
 			});
 			await mailHelper.sendInviteAcceptanceMail(inviteMailData)
 		}
@@ -242,25 +242,18 @@ const signin = async (req, res, next) => {
 
 	try {
 		const user = await db.Users.findOne({
-			attributes: [
-				'id',
-				'firstName',
-				'lastName',
-				'email',
-				'password',
-				'fullName'
-			],		
+			attributes: [ 'id', 'firstName', 'lastName', 'email', 'password', 'fullName', 'isActive' ],
 			where: {
 				[Op.or]: [
 					where(fn('LOWER', col('email')), request.email),
 					where(fn('LOWER', col('username')), request.email),
-				]
+				],
+				isActive: true
 			},
 			include: [{
 				model: db.UserConfig,
 				attributes: ['isVerified'],
 				required: true,
-				where: { isActive: true }
 			}, {
 				model: db.Roles,
 				attributes: ['name'],
@@ -283,6 +276,10 @@ const signin = async (req, res, next) => {
 			return res.response(INCORRECT_PASS, {}, 401, INCORRECT_PASS_EXCEPTION, false);
 		}
 		if (!user.UserConfig.isVerified) { return res.response(ACCOUNT_NOT_VERIFIED, {}, 403, ACCOUNT_NOT_VERIFIED_EXCEPTION, false); }
+		await db.UserConfig.update(
+			{ lastLoginAt: dayjs().toDate() },
+			{ where: { userId: user?.id } }
+		);
 
 		const userData = {
 			id: user.id,

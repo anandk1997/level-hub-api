@@ -33,6 +33,7 @@ const {
 	USER_ASSOCIATED_SUCCESS,
 	USERS_FETCH_SUCCESS,
 	USER_FETCH_SUCCESS,
+	USER_DEACTIVATED_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 
@@ -107,13 +108,7 @@ const changePassword = async (req, res, next) => {
 	try {
 		const { oldPassword, newPassword } = req.body, userId = req.userId;
 		const user = await db.Users.findOne({
-			attributes: [
-				'id',
-				'firstName',
-				'lastName',
-				'email',
-				'password',
-			],
+			attributes: [ 'id', 'firstName', 'lastName', 'email', 'password' ],
 			where: { id: userId },
 		});
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
@@ -276,7 +271,7 @@ const fetchUsers = async (req, res, next) => {
  */
 const fetchUserDetails = async (req, res, next) => {
 	try {
-    const userId = parseInt(req?.params?.id), userInfo = req.user;;
+    const userId = parseInt(req?.params?.id), userInfo = req.user;
 		const ownerId = userInfo.ownerId || userInfo.userId;
 
 		const user = await db.Users.findOne({
@@ -298,70 +293,33 @@ const fetchUserDetails = async (req, res, next) => {
 	}
 };
 
-
-
 /**
- * Add delete user
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * API to deactivate user and it's associated users if any
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const delete_users = async (req, res, next) => {
-	/* const request = req.body;
-	if (!request.deleteIds) { next(new ErrorHandler(400, 'Missing delete IDs')); }
-	// return res.json({ success: true, message: 'Fetched user successfully!', request });
-
+const deactivateUser = async (req, res, next) => {
 	try {
-		const result = await User.destroy({ where: { id: { [Op.in]: request.deleteIds } } });
-		return res.json({ success: true, message: 'User deleted successfully!', result });
+    const userId = parseInt(req?.params?.id), userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+		let deactivateIds = [userId];
+		const associatedUsers = await db.UserAssociations.findAll({ where: { primaryUserId: userId }  });
+		if (associatedUsers?.length) {
+			deactivateIds = [
+				...deactivateIds,
+				...associatedUsers.map(associated => associated.associatedUserId)
+			];
+		}
+		const deactivated = await db.Users.update({ isActive: false }, { where: { id: deactivateIds, ownerId }});
+		return res.response(USER_DEACTIVATED_SUCCESS, deactivated.length ? deactivated[0] : 0);
 	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	} */
-};
-
-/**
- * Fetch admin profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const get_profile = async (req, res, next) => {
-	try {
-		const userId = req.user_id;
-		let result = await User.findOne({
-			attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'profile_image', 'mobile'],
-			where: { id: userId, is_deleted: false },
-			raw: true,
-		}); // , logging: console.log
-		result.full_name = (result.first_name + ' ' + result.last_name).trim();
-		return res.json({ success: true, message: 'Fetch user profile successfully!', data: { profile_details: result } });
-	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
 
-/**
- * Update profile image
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const update_password = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		if (!request.password) { return next(new ErrorHandler(400, 'Missing required fields!')); }
-		const passwordHash = await bcrypt.hashSync(request.password, saltRounds);
-		// return res.json({ success: true, message: 'Fetch user profile successfully!', request, passwordHash });
-		let result = await User.update({ password: passwordHash }, { where: { id: userId, role: 'admin' } }); // , logging: console.log
-		return res.json({ success: true, message: 'Updated password successfully!' });
-	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	}
-};
 
 const delete_file = (filepath) => {
 	if (fs.existsSync(filepath)) {
@@ -416,4 +374,5 @@ module.exports = {
 	fetchAssociatedUsers,
 	fetchUsers,
 	fetchUserDetails,
+	deactivateUser,
 };

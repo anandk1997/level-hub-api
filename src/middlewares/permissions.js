@@ -86,11 +86,12 @@ const checkAssociatedUser = (type = 'query', key = 'userId') => {
   return async (req, res, next) => {
     try {
       const primaryUserId = parseInt(req.userId), userInfo = req.user;
+      const ownerId = userInfo.ownerId || primaryUserId;
       let associatedUserId = req[type][key] ? parseInt(req[type][key]) : req[type][key];
-      if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
+      if (!associatedUserId || ownerId === associatedUserId) { return next(); }
       if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       associatedUserId = parseInt(associatedUserId);
-      const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
+      const isAssociated = await checkIfUserAssociated(ownerId, associatedUserId);
       if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       next();
     } catch (error) {

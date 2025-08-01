@@ -97,6 +97,11 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'SET NULL'
       }
 		},
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
     fullName: {
       type: DataTypes.VIRTUAL,
       get() {

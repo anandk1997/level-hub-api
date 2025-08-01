@@ -78,7 +78,7 @@ router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), checkAssociatedUse
 router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
 router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchAllTimeActivities);
 router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchTodaysActivities);
-router.get("/dashboard/leaderboard", checkPermssion(SUBACCOUNT_MANAGE), dashCtrl.fetchLeaderboard);
+router.get("/dashboard/leaderboard", checkPermssion(ACTIVITY_VIEW), dashValidation.fetchLeaderboardValidation, dashCtrl.fetchLeaderboard);
 
 // USERS
 router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);
@@ -98,7 +98,8 @@ router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild)
 
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
 router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
-router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), userCtrl.fetchUserDetails);
+router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
+router.put("/user/deactivate/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.deactivateUser);
 
 // INVITE 
 router.route("/invite")

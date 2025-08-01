@@ -67,6 +67,7 @@ module.exports = {
     DASH_ALL_STATS_FETCH_SUCCESS: 'All time activity stats fetched successfully.',
     DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
     DASH_LEADERBOARD_FETCH_SUCCESS: "Leaderboard stats fetched successfully.",
+    DASH_USERS_FETCH_SUCCESS: "Total active users fetched successfully.",
     VALIDATION_ERROR_EXCEPTION : "ValidationErrorException",
     FETCH_PROFILE_SUCCESS: 'Fetched user profile successfully.',
     FORBIDDEN: 'Forbidden access.',
@@ -94,4 +95,5 @@ module.exports = {
     INVITE_EXPIRED_EXCEPTION: 'InviteExpiredException',
     USERS_FETCH_SUCCESS: "User listing fetched successfully.",
     USER_FETCH_SUCCESS: "User details fetched successfully.",
+    USER_DEACTIVATED_SUCCESS: "User deactivated successfully.",
 }
