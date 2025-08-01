@@ -266,7 +266,6 @@ const signin = async (req, res, next) => {
 					through: { attributes: [] },
 				}
 			}],
-			subQuery: false
 		});
 		
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
