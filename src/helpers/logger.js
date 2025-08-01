@@ -3,7 +3,7 @@ const { createLogger, format, transports } = require('winston');
 const transporters = [];
 
 if (process.env.NODE_ENV === 'staging') {
-	transporters.push(new winston.transports.Console());
+	transporters.push(new transports.Console());
 } else {
 	transporters.push(
 		new transports.File({ filename: 'logs/error.log', level: 'error' }),
