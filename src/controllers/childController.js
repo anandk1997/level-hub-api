@@ -248,7 +248,7 @@ const insertAssociations = async (parentId, ownerId, childId, t) => {
 			associatedUserId: childId,
 			relationType: PARENT_CHILD
 		}];
-		if (ownerId !== parentId) {
+		if (ownerId && ownerId !== parentId) {
 			associations = [
 				...associations,
 				{
