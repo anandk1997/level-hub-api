@@ -47,7 +47,26 @@ const monthlyActivityHistValidation = async (req, res, next) => {
  */
 const fetchLeaderboardValidation = async (req, res, next) => {
   const schema = Joi.object({
-    role: joiExtended.string().valid(PARENT, INDIVIDUAL, CHILD).optional(),
+    role: joiExtended.string().valid(PARENT, INDIVIDUAL, CHILD, 'ALL').optional(),
+  });
+  try {
+    await schema.validateAsync(req.query);
+    next();
+  } catch (error) {
+    return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+  }
+};
+
+/**
+ * Fetch leaderboard schema validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const activeUsersValidation = async (req, res, next) => {
+  const schema = Joi.object({
+    type: joiExtended.string().valid('all', 'monthly').optional(),
   });
   try {
     await schema.validateAsync(req.query);
@@ -60,4 +79,5 @@ const fetchLeaderboardValidation = async (req, res, next) => {
 module.exports = {
 	monthlyActivityHistValidation,
   fetchLeaderboardValidation,
+  activeUsersValidation,
 };

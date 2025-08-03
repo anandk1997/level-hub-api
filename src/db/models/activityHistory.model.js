@@ -21,11 +21,11 @@ module.exports = (sequelize, DataTypes) => {
       ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'assigneeId',
         onDelete: 'CASCADE', // Delete level when the user is deleted,
-        as: "assignee" 
+        as: "historyAssignee"
       });
       ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'assignedById',
-        as: "assignedBy"
+        as: "historyAssignedBy"
       });
       ActivityHistory.belongsTo(models.Users, {
         foreignKey: 'approvedById',

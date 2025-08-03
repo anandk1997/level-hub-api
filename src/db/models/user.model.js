@@ -21,6 +21,9 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasOne(models.UserProgress, { foreignKey: 'userId' });
       Users.hasMany(models.Activities, { foreignKey: 'assigneeId', as: "assignee" });
       Users.hasMany(models.Activities, { foreignKey: 'assignedById', as: "assignedBy" });
+      Users.hasMany(models.ActivityHistory, { foreignKey: 'assigneeId', as: "historyAssignee" });
+      Users.hasMany(models.ActivityHistory, { foreignKey: 'assignedById', as: "historyAssignedBy" });
+      Users.hasMany(models.ActivityHistory, { foreignKey: 'approvedById', as: "approvedBy" });
       Users.hasMany(models.ActivityTemplates, { foreignKey: 'userId'});
       Users.hasMany(models.UserAssociations, { foreignKey: 'primaryUserId', as: 'primaryUser' });
       Users.hasMany(models.UserAssociations, { foreignKey: 'associatedUserId', as: 'associatedUser' });

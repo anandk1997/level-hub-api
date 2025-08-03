@@ -9,6 +9,8 @@ const {
   DASH_TODAY_STATS_FETCH_SUCCESS,
   DASH_LEADERBOARD_FETCH_SUCCESS,
   DASH_USERS_FETCH_SUCCESS,
+  DASH_INVITES_FETCH_SUCCESS,
+  DASH_XP_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 const {
@@ -19,7 +21,8 @@ const {
     INDIVIDUAL_OWNER,
     CHILD
   }
-} = require('../constants')
+} = require('../constants');
+const { calculateLevel } = require('../utils');
 
 const { Op, fn, col, where, literal, QueryTypes } = db.Sequelize;
 
@@ -180,7 +183,7 @@ const fetchLeaderboard = async (req, res, next) => {
   try {
     const userId = req.userId, userInfo = req.user, role = req.query.role;
 		const ownerId = userInfo.ownerId || userInfo.userId;
-    const whereRoleName = role ? role : [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ];
+    const whereRoleName = role !== "ALL" ? [role] : [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ];
 
     const target = await userHelper.fetchUserTarget(userId);
 
@@ -201,7 +204,7 @@ const fetchLeaderboard = async (req, res, next) => {
           attributes: ['name'],
           model: db.Roles,
           where: {
-            name: whereRoleName
+            name: { [Op.iLike] : { [Op.any]: whereRoleName } }
           }
         }
       ],
@@ -215,12 +218,12 @@ const fetchLeaderboard = async (req, res, next) => {
 				...user.dataValues,
 				targetXP: target?.targetXP,
         currentXP: user?.UserProgress?.currentXP,
-	      level: target?.targetXP && user?.UserProgress?.currentXP ? Math.floor(user?.UserProgress?.currentXP / target?.targetXP) : 0
+	      level: calculateLevel(target?.targetXP, user?.UserProgress?.currentXP)
 			};
 			delete userInfo.UserProgress;
 			return userInfo;
 		});
-    return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { role, leaderboard });
+    return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { leaderboard });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -235,14 +238,76 @@ const fetchLeaderboard = async (req, res, next) => {
  */
 const fetchActiveUsers = async (req, res, next) => {
   try {
-		const ownerId = req.user?.ownerId || req.user?.userId;
-    const count = await db.Users.count({
-      where: {
-        ownerId,
-        isActive: true
-      },
-    });
+		const ownerId = req.user?.ownerId || req.user?.userId, { type = 'all' } = req.query;
+    let where = {
+      ownerId,
+      isActive: true,
+    };
+    if (type === 'monthly') {
+      const startDate = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+      const endDate = dayjs().endOf('month').format('YYYY-MM-DD HH:mm:ss');
+      where = {
+        ...where,
+        [Op.and]: literal(`DATE("createdAt") BETWEEN '${startDate}' AND '${endDate}'`)
+      }
+    }
+    const count = await db.Users.count({ where });
     return res.response(DASH_USERS_FETCH_SUCCESS, { count });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch count of pending invites
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchPendingInvites = async (req, res, next) => {
+  try {
+		const userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+    const inviteCount = await db.Invites.count({
+			where: {
+        ownerId,
+        status: 'pending',
+        expiryDate: { [Op.gte]: dayjs().toDate() }
+      },
+		});
+    return res.response(DASH_INVITES_FETCH_SUCCESS, { count: inviteCount });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch all cumlative XP
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchCumulativeXP = async (req, res, next) => {
+  try {
+		const userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+    const historyResult = await db.ActivityHistory.findOne({
+      attributes: [[fn('SUM', col('xp')), 'totalXP']],
+      include: {
+        model: db.Users,
+        as: 'historyAssignee',
+        where: { ownerId },
+        attributes: [],
+        required: true
+      },
+      group: ['xp'],
+      subQuery: false
+    });
+    return res.response(DASH_XP_FETCH_SUCCESS, { totalXP: historyResult.dataValues.totalXP || 0 });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -254,4 +319,6 @@ module.exports = {
   fetchTodaysActivities,
   fetchLeaderboard,
   fetchActiveUsers,
+  fetchPendingInvites,
+  fetchCumulativeXP,
 }

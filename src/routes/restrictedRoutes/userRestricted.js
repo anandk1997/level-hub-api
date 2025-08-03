@@ -79,6 +79,9 @@ router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedU
 router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchAllTimeActivities);
 router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchTodaysActivities);
 router.get("/dashboard/leaderboard", checkPermssion(ACTIVITY_VIEW), dashValidation.fetchLeaderboardValidation, dashCtrl.fetchLeaderboard);
+router.get("/dashboard/users", checkPermssion(ACTIVITY_VIEW), dashValidation.activeUsersValidation, dashCtrl.fetchActiveUsers);
+router.get("/dashboard/invites", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchPendingInvites);
+router.get("/dashboard/totalXP", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchCumulativeXP);
 
 // USERS
 router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);

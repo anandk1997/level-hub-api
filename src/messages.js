@@ -68,6 +68,8 @@ module.exports = {
     DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
     DASH_LEADERBOARD_FETCH_SUCCESS: "Leaderboard stats fetched successfully.",
     DASH_USERS_FETCH_SUCCESS: "Total active users fetched successfully.",
+    DASH_INVITES_FETCH_SUCCESS: "Invite stats fetched successfully.",
+    DASH_XP_FETCH_SUCCESS: "Cumulative XP fetched successfully.",
     VALIDATION_ERROR_EXCEPTION : "ValidationErrorException",
     FETCH_PROFILE_SUCCESS: 'Fetched user profile successfully.',
     FORBIDDEN: 'Forbidden access.',

@@ -5,6 +5,17 @@ const generateOtp = () => {
 };
 
 /**
+ * Calculate level from target vs current XP
+ *
+ * @param {number} targetXP
+ * @param {number} currentXP
+ * @returns {number}
+ */
+const calculateLevel = (targetXP, currentXP) => {
+  return targetXP && currentXP ? Math.floor(currentXP / targetXP) : 0;
+};
+
+/**
  * Calculate the distance between two coordinates
  * 
  * @param {Object} coord1
@@ -41,4 +52,5 @@ const roundOffNumber = (value, precision = 2) => {
 
 module.exports = {
   generateOtp,
+  calculateLevel,
 };
