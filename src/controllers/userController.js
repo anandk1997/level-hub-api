@@ -34,6 +34,7 @@ const {
 	USERS_FETCH_SUCCESS,
 	USER_FETCH_SUCCESS,
 	USER_DEACTIVATED_SUCCESS,
+	RELATED_USER_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 
@@ -319,6 +320,34 @@ const deactivateUser = async (req, res, next) => {
 	}
 };
 
+/**
+ * API to fetch related associated users
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchRelatedUsers = async (req, res, next) => {
+	try {
+		const relation = req.params.type, userId = parseInt(req.params.id), userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+		let associatedUsers;
+
+		switch (relation) {
+			case 'child':
+				associatedUsers = await userHelper.fetchUsersAssociated(userId, PARENT_CHILD, ownerId);
+				break;
+			default:
+				associatedUsers = await userHelper.fetchParent(userId, PARENT_CHILD);
+				break;
+		}
+
+		return res.response(RELATED_USER_FETCH_SUCCESS, { associatedUsers });
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
+
 
 
 const delete_file = (filepath) => {
@@ -375,4 +404,5 @@ module.exports = {
 	fetchUsers,
 	fetchUserDetails,
 	deactivateUser,
+	fetchRelatedUsers,
 };

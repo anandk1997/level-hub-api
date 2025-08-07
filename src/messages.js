@@ -98,4 +98,5 @@ module.exports = {
     USERS_FETCH_SUCCESS: "User listing fetched successfully.",
     USER_FETCH_SUCCESS: "User details fetched successfully.",
     USER_DEACTIVATED_SUCCESS: "User deactivated successfully.",
+    RELATED_USER_FETCH_SUCCESS: "Related user fetched successfully.",
 }

@@ -103,6 +103,7 @@ router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fet
 router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
 router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
 router.put("/user/deactivate/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.deactivateUser);
+router.get("/user/:type/:id", checkPermssion(ACCOUNT_MANAGE), userValidation.relatedUsersValidation, userCtrl.fetchRelatedUsers);
 
 // INVITE 
 router.route("/invite")

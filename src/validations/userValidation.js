@@ -194,6 +194,27 @@ const fetchUsersValidation = async (req, res, next) => {
   }
 };
 
+/**
+ * Fetch related users schema validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const relatedUsersValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+  const schema = Joi.object({
+    type: Joi.string().valid('parent', 'child', 'owner').optional(),
+    id: Joi.number().required(),
+  });
+  try {
+    await schema.validateAsync(req.params);
+    next();
+  } catch (error) {
+    return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+  }
+};
+
 
 
 module.exports = {
@@ -204,4 +225,5 @@ module.exports = {
 	resetChildPasswordValidation,
 	fetchAssociatedValidation,
 	fetchUsersValidation,
+	relatedUsersValidation,
 };
