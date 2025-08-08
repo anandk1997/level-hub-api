@@ -12,6 +12,7 @@ const {
   userCtrl,
   childCtrl,
   inviteCtrl,
+  coachCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
@@ -36,6 +37,10 @@ const {
     USER_INVITE,
     SUBACCOUNT_MANAGE,
     CHILD_MANAGE,
+    COACH_MANAGE
+  },
+  USER_ASSOCIATIONS: {
+    GYM_COACH
   }
 } = require('../../constants');
 
@@ -115,6 +120,16 @@ router.route("/invite/:id")
   .all(checkPermssion(USER_INVITE))
   .get(inviteCtrl.fetchInviteDetails)
   .delete(inviteCtrl.deleteInvite);
+
+
+// COACH MANAGEMENT
+router.route("/coach")
+  .all(checkPermssion(COACH_MANAGE))
+  .post(userValidation.coachAccountValidation, coachCtrl.createCoachAccount)
+  .put(userValidation.updateCoachValidation, checkAssociatedUser('body', 'coachId', GYM_COACH), coachCtrl.updateCoach)
+  .get(userValidation.fetchCoachesValidation, coachCtrl.fetchCoaches);
+// router.put("/coach/password/reset", checkPermssion(COACH_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
+router.delete("/coach/:id", checkPermssion(COACH_MANAGE), checkAssociatedUser('params', 'id', GYM_COACH), coachCtrl.deleteCoach);
 
 // router.route("/template/bulk/:id").get(templateCtrl.savePredefiendTemplates)
 

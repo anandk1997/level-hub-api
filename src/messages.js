@@ -99,4 +99,8 @@ module.exports = {
     USER_FETCH_SUCCESS: "User details fetched successfully.",
     USER_DEACTIVATED_SUCCESS: "User deactivated successfully.",
     RELATED_USER_FETCH_SUCCESS: "Related user fetched successfully.",
+    COACH_CREATE_SUCCESS: 'Coach created successfully!',
+    COACH_UPDATE_SUCCESS: 'Coach updated successfully!',
+    COACH_FETCH_SUCCESS: 'Coach list fetched successfully.',
+    COACH_DELETED_SUCCESS: 'Coach deleted successfully.',
 }

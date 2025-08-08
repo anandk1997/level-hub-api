@@ -39,21 +39,19 @@ const sendInviteValidation = async (req, res, next) => {
  * Fetch invites schema validation
  *
  * @async
- * @function fetchActivitiesValidation
+ * @function fetchInvitesValidation
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
 const fetchInvitesValidation = async (req, res, next) => {
-	let { page, pageSize } = req.query;
-	page = page ? parseInt(page) : page;
-	pageSize = pageSize ? parseInt(pageSize) : pageSize;
   const schema = Joi.object({
-    page: Joi.number().integer().strict().min(1).optional(),
-    pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    pageSize: Joi.number().integer().min(1).max(100).optional(),
+    search: Joi.string().min(1).max(100).optional(),
   });
   try {
-    await schema.validateAsync({ page, pageSize });
+    await schema.validateAsync(req.query);
     next();
   } catch (error) {
     return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);

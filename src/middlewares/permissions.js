@@ -76,8 +76,9 @@ const checkPermssion = (permissionKey) => {
  *
  * @param {string?} type
  * @param {string?} key
+ * @param {string?} relation
  */
-const checkAssociatedUser = (type = 'query', key = 'userId') => {
+const checkAssociatedUser = (type = 'query', key = 'userId', relation = null) => {
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -91,7 +92,7 @@ const checkAssociatedUser = (type = 'query', key = 'userId') => {
       if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
       if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       associatedUserId = parseInt(associatedUserId);
-      const isAssociated = await checkIfUserAssociated(ownerId, associatedUserId);
+      const isAssociated = await checkIfUserAssociated(ownerId, associatedUserId, relation);
       if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       next();
     } catch (error) {

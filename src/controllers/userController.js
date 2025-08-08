@@ -230,6 +230,7 @@ const fetchUsers = async (req, res, next) => {
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'profileImage'],
 			where: {
 				ownerId,
+				isActive: true,
 				...likeSearch
 			},
 			include: [{
@@ -280,6 +281,7 @@ const fetchUserDetails = async (req, res, next) => {
 			where: {
 				id: userId,
 				ownerId,
+				isActive: true
 			},
 			include: {
 				attributes: ['name'],

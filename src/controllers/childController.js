@@ -122,7 +122,8 @@ const fetchChildren = async (req, res, next) => {
     });
 		
 		const { count, rows } = await db.Users.findAndCountAll({
-			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'roleId'],
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'roleId', 'isActive'],
+			where: { isActive: true },
 			include: [{
 				model: db.UserAssociations,
       	as: 'associatedUser',
@@ -175,9 +176,9 @@ const updateChild = async (req, res, next) => {
 			firstName: request.firstName.trim(),
 			lastName: request.lastName ? request.lastName.trim() : null,
 			email: request?.email ? request?.email?.trim() : null,
-			phone: request?.phone?.trim(),
-			gender: request?.gender?.trim(),
-			dob: request?.dob,
+			phone: request?.phone ? request?.phone?.trim() : null,
+			gender: request?.gender ? request?.gender?.trim() : null,
+			dob: request?.dob || null,
 		};
 		const result = await db.Users.update(
 			user,

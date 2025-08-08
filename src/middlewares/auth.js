@@ -35,7 +35,7 @@ const checkToken = (req, res, next) => {
 					req.accessToken = token;
 					req.userId = parseInt(decoded.id);
 					req.user = {
-						userId: decoded.id,
+						userId: parseInt(decoded.id),
 						email: decoded.email,
 						username: decoded.username,
 						role: decoded.role,

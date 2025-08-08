@@ -12,7 +12,9 @@ const {
 	ROLES: {
 		PARENT,
 		CHILD,
-		INDIVIDUAL
+		INDIVIDUAL,
+		COACH_HEAD,
+		COACH
 	}
 } = require('../constants');
 
@@ -66,7 +68,7 @@ const changePasswordValidation = async (req, res, next) => {
 
 /**
  * Create child account validation
- * 
+ *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
@@ -215,7 +217,88 @@ const relatedUsersValidation = async (req, res, next) => {
   }
 };
 
+/**
+ * Create child account validation
+ * 
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const coachAccountValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+	const schema = Joi.object({
+		firstName: Joi.string().min(1).max(128).required(),
+		lastName: Joi.string().max(128).allow().optional(),
+		email: Joi.string().max(128).email({ minDomainSegments: 2 }).required(),
+		phone: Joi.string().max(20).optional(),
+		password: Joi.string().min(8).max(128).required(),
+		role: Joi.string().valid(COACH_HEAD, COACH).required(),
+		gender: Joi.string().valid('male', 'female', 'others').optional(),
+		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
+	});
+	try {
+		await schema.validateAsync(req.body);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
 
+/**
+ * Update coach account validation
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const updateCoachValidation = async (req, res, next) => {
+	/** @type {import('joi').ObjectSchema} */
+	const schema = Joi.object({
+		coachId: Joi.number().integer().positive().required(),
+		firstName: Joi.string().min(1).max(128).required(),
+		lastName: Joi.string().max(128).allow('').optional(),
+		phone: Joi.string().max(20).optional(),
+		role: Joi.string().valid(COACH_HEAD, COACH).required(),
+		gender: Joi.string().valid('male', 'female', 'others').optional(),
+		dob: Joi.date().format('YYYY-MM-DD').raw().optional(),
+	});
+	try {
+		await schema.validateAsync(req.body);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
+
+/**
+ * Fetch invites schema validation
+ *
+ * @async
+ * @function fetchInvitesValidation
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchCoachesValidation = async (req, res, next) => {
+	let { page, pageSize } = req.query;
+	page = page ? parseInt(page) : page;
+	pageSize = pageSize ? parseInt(pageSize) : pageSize;
+	const schema = Joi.object({
+		page: Joi.number().integer().min(1).optional(),
+		pageSize: Joi.number().integer().min(1).max(100).optional(),
+		search: Joi.string().min(1).max(100).allow('').optional(),
+		role: Joi.string().valid(COACH_HEAD, COACH, "ALL").optional(),
+		sort: Joi.string().valid("ASC", "DESC").optional(),
+    sortBy: Joi.string().valid("fullName", "email", 'role').optional(),
+	});
+	try {
+		// await schema.validateAsync({ page, pageSize, search });
+		await schema.validateAsync(req.query);
+		next();
+	} catch (error) {
+		return res.response(error?.message, {}, 400, VALIDATION_ERROR_EXCEPTION, false);
+	}
+};
 
 module.exports = {
 	updateProfileValidation,
@@ -226,4 +309,7 @@ module.exports = {
 	fetchAssociatedValidation,
 	fetchUsersValidation,
 	relatedUsersValidation,
+	coachAccountValidation,
+	updateCoachValidation,
+	fetchCoachesValidation,
 };
