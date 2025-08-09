@@ -26,7 +26,7 @@ const {
 } = require('../messages');
 
 const { checkIfUserExists } = userHelper;
-const { Op } = db.Sequelize;
+const { Op, literal, where } = db.Sequelize;
 
 /**
  * Send invite to the users via email
@@ -106,6 +106,38 @@ const checkIfInviteExists = async (email, ownerId, returnResult = false) => {
 };
 
 /**
+ * Generates filter, sorting, and search criteria for querying invite listing
+ *
+ * @param {string} sortBy
+ * @param {string} sort
+ * @param {string?} search
+ * @returns {Promise<{ likeSearch: object, order: Array, roleWhere: object }>}
+ */
+const setInviteFilter = async (sortBy, sort, search) => {
+	search = search ? search.trim().toLowerCase() : '';
+
+	const orderBy = (sortBy === 'fullName') ? [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)] : [sortBy];
+	const order = [...orderBy, sort];
+
+	const searchColumns = ['email', 'role'];
+	let likeSearch = {};
+	if (search) {
+		const likeColumns = searchColumns.map(column => {
+			return { [column]: { [Op.iLike]: '%' + search + '%' } };
+		});
+		const fullNameSearch = where(
+			literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
+			{ [Op.iLike]: '%' + search + '%' }
+		);
+		likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
+	}
+	return {
+		likeSearch,
+		order,
+	}
+};
+
+/**
  * Fetch all active invites sent by an organization
  * 
  * @param {import('express').Request} req
@@ -115,20 +147,28 @@ const checkIfInviteExists = async (email, ownerId, returnResult = false) => {
 const fetchInvites = async (req, res, next) => {
 	try {
 		const userInfo = req.user;
-		let { page, pageSize } = req.query;
+		let { page, pageSize, search = '', sortBy = 'fullName', sort = 'ASC', role = "ALL" } = req.query;
 		page = page ? parseInt(page) : 1;
 		pageSize = pageSize ? parseInt(pageSize) : 10;
     const pageOffset = pageSize * (page - 1);
 		const ownerId = userInfo.ownerId || userInfo.userId;
 
+		const { likeSearch, order } = await setInviteFilter(sortBy, sort, search);
+		const where = {
+			ownerId,
+			...likeSearch
+		}
+		if (role.toLowerCase() !== 'all') {
+			where.role = role;
+		}
+
 		const { count, rows } = await db.Invites.findAndCountAll({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'status', 'expiryDate'],
-			where: {
-				ownerId
-			},
+			where,
 			limit: pageSize,
       offset: pageOffset,
-			order: [['createdAt', 'DESC']]
+			order: [order],
+			subQuery: false
 		});
 		const invites = rows.map(row => ({
 			...row.dataValues,
@@ -136,7 +176,7 @@ const fetchInvites = async (req, res, next) => {
 		}))
     return res.response(INVITES_FETCH_SUCCESS, { count, invites });
 	} catch (error) {
-		throw error;
+    return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
@@ -154,12 +194,18 @@ const fetchInviteDetails = async (req, res, next) => {
     const invite = await db.Invites.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'sentById', 'status', 'userId', 'expiryDate'],
 			where: { id: inviteId, ownerId },
-			include: {
+			include: [{
 				model: db.Users,
 				as: 'sentByUser',
 				required: false,
 				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}
+			}, {
+				model: db.Users,
+				as: "createdUser",
+				required: false,
+				attributes: ['id',  'fullName', 'firstName', 'lastName', 'isActive']
+			}],
+			subQuery: false
 		});
 		if (invite?.expiryDate) {
 			invite.status = invite.status === 'pending' && invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;

@@ -158,7 +158,6 @@ const fetchCoaches = async (req, res, next) => {
     const pageOffset = pageSize * (page - 1);
 
 		const { likeSearch, order, roleWhere } = await setUsersFilter(role, sortBy, sort, search);
-		
 
 		const { count, rows } = await db.Users.findAndCountAll({
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'roleId'],
