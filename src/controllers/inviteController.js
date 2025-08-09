@@ -162,7 +162,7 @@ const fetchInviteDetails = async (req, res, next) => {
 			}
 		});
 		if (invite?.expiryDate) {
-			invite.status = invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
+			invite.status = row.status === 'pending' && invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
 		}
     return res.response(INVITE_FETCH_SUCCESS, { invite });
   } catch (error) {
