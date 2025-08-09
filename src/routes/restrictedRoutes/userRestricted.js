@@ -104,6 +104,7 @@ router.route("/child")
 router.put("/child/password/reset", checkPermssion(CHILD_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild);
 
+// USER MANGEMENT
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
 router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
 router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);

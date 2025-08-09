@@ -193,7 +193,8 @@ const fetchLeaderboard = async (req, res, next) => {
         [Op.or]: {
           id: userId,
           ownerId,
-        }
+        },
+        isActive: true
       },
       include: [
         {
