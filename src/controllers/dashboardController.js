@@ -301,7 +301,7 @@ const fetchCumulativeXP = async (req, res, next) => {
       include: {
         model: db.Users,
         as: 'historyAssignee',
-        where: { ownerId },
+        where: { ownerId, isActive: true },
         attributes: [],
         required: true
       },

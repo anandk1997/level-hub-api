@@ -132,7 +132,7 @@ const fetchInvites = async (req, res, next) => {
 		});
 		const invites = rows.map(row => ({
 			...row.dataValues,
-			status: dayjs(row.expiryDate).isBefore(dayjs()) ? 'expired' : row.status
+			status: row.status === 'pending' && dayjs(row.expiryDate).isBefore(dayjs()) ? 'expired' : row.status
 		}))
     return res.response(INVITES_FETCH_SUCCESS, { count, invites });
 	} catch (error) {
@@ -157,7 +157,7 @@ const fetchInviteDetails = async (req, res, next) => {
 			include: {
 				model: db.Users,
 				as: 'sentByUser',
-				required: true,
+				required: false,
 				attributes: ['id', 'fullName', 'firstName', 'lastName'],
 			}
 		});
