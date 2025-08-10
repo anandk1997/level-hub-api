@@ -51,6 +51,8 @@ const sendInvite = async (req, res, next) => {
 		const inviteExists = await checkIfInviteExists(email, ownerId);
     if (inviteExists) { return res.response(INVITE_EXISTS, {}, 409, INVITE_EXISTS_EXCEPTION, false); }
 
+		// TODO: Check if owner have exceeded users limit as per subscribed plan
+
 		const token = randomBytes(32).toString('hex');
 		const params = btoa(JSON.stringify({
 			token,
@@ -73,6 +75,8 @@ const sendInvite = async (req, res, next) => {
 			token,
 			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
 		});
+		// TODO: Show if less user capacity is remaining
+
 		await mailHelper.sendInviteEmail(mailData);
     return res.response(INVITE_SENT_SUCCESS, {}, 201);
   } catch (error) {
@@ -250,7 +254,7 @@ const verifyInvite = async (req, res, next) => {
 
     const invite = await db.Invites.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
-			where: { token, email, status: ['pending', 'expired'] },
+			where: { token, email, status: ['pending'] },
 			include: [{
 				model: db.Users,
 				as: 'sentByUser',
@@ -301,18 +305,20 @@ const resendInvite = async (req, res, next) => {
 			}
 		});
     if (!invite) { return res.response(INVITE_INVALID, {}, 400, INVITE_INVALID_EXCEPTION, false); }
+		const token = dayjs(invite.expiryDate).isBefore(dayjs()) ? randomBytes(32).toString('hex') : invite.token;
+
+		const updated = await invite.update({
+			status: 'pending',
+			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate(),
+			token
+		});
 
 		const mailData = {
-			params: btoa(JSON.stringify({ token: invite.token, email: invite.email })),
+			params: btoa(JSON.stringify({ token, email: invite.email })),
 			fullName: (`${invite.firstName} ${invite.lastName ? invite.lastName : ''}`).trim(),
 			ownerName: userInfo.fullName,
 			email: invite.email,
 		};
-
-		const updated = await invite.update({
-			status: 'pending',
-			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
-		});
 		await mailHelper.sendInviteEmail(mailData);
 
     return res.response(INVITE_SENT_SUCCESS, updated);

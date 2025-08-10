@@ -11,11 +11,12 @@ const {
 	EMAIL_EXISTS_EXCEPTION,
 	ROLE_NOT_EXISTS,
 	ROLE_NOT_EXISTS_EXCEPTION,
-	PASSWORD_RESET_SUCCESS,
   COACH_CREATE_SUCCESS,
   COACH_UPDATE_SUCCESS,
   COACH_FETCH_SUCCESS,
 	COACH_DELETED_SUCCESS,
+	COACH_MAX_LIMIT_EXCEED,
+	COACH_MAX_LIMIT_EXCEED_EXCEPTION,
 } = require('../messages');
 const { checkIfUserExists } = require('../helpers/userHelper');
 const {
@@ -47,15 +48,16 @@ const createCoachAccount = async (req, res, next) => {
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
 
 
-    /* const coachCount = await db.UserAssociations.count({
+		// TODO: Check if owner have exceeded users limit as per subscribed plan
+		const coachCount = await db.UserAssociations.count({
       where: {
         primaryUserId: userId,
         relationType: GYM_COACH
       },
     });
     if (coachCount >= MAX_CHILD_LIMIT) {
-      return res.response(CHILD_MAX_LIMIT_EXCEED, {}, 400, CHILD_MAX_LIMIT_EXCEED_EXCEPTION, false);
-    } */
+      return res.response(COACH_MAX_LIMIT_EXCEED, {}, 400, COACH_MAX_LIMIT_EXCEED_EXCEPTION, false);
+    }
 
 		const role = await db.Roles.findOne({
 			attributes: ['id'],

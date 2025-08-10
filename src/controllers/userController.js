@@ -12,8 +12,8 @@ const {
 	ROLES: {
 		PARENT_OWNER,
 		PARENT,
-		INDIVIDUAL,
-		INDIVIDUAL_OWNER
+		COACH_HEAD,
+		COACH
 	}
 } = require('../constants');
 const { db } = require('../db');
@@ -135,7 +135,7 @@ const changePassword = async (req, res, next) => {
  */
 const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		const relation = req?.query?.relation, userInfo = req.user;
+		const { relation } = req?.query, userInfo = req.user;
 		let ownerId = userInfo?.ownerId || userInfo?.userId, currentUser;
 		const parentRole = [PARENT_OWNER, PARENT];
 		if (parentRole.includes(userInfo.role)) { ownerId = userInfo?.userId }
@@ -175,7 +175,7 @@ const setUsersFilter = async (role, sortBy, sort, search) => {
 	search = search.trim().toLowerCase();
 
 	let roleWhere = {}, orderBy = [];
-	if (role !== "ALL") {
+	if (role.toLowerCase() !== "all") {
 		roleWhere = { ...roleWhere, name: role }
 	}
 	if (sortBy === 'fullName') {
@@ -236,7 +236,12 @@ const fetchUsers = async (req, res, next) => {
 			include: [{
 				attributes: ['name'],
 				model: db.Roles,
-				where: roleWhere,
+				where: {
+					name: {
+						[Op.notIn]: [COACH_HEAD, COACH],
+					},
+					...roleWhere
+				},
 			}, {
 				model: db.UserProgress,
 				attributes: ['id', 'userId', 'currentXP'],

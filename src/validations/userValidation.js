@@ -158,7 +158,7 @@ const resetChildPasswordValidation = async (req, res, next) => {
  */
 const fetchAssociatedValidation = async (req, res, next) => {
 	const schema = Joi.object({
-		relation: Joi.string().valid(GYM_COACH, ORGANIZATION_USER, PARENT_CHILD).optional()
+		relation: Joi.string().valid(GYM_COACH, ORGANIZATION_USER, PARENT_CHILD, "ALL").optional()
 	});
 	try {
 		await schema.validateAsync(req.query);

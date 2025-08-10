@@ -14,6 +14,8 @@ const {
 	}
 } = require('../constants');
 
+const { Op } = db.Sequelize;
+
 /**
  * Check if user exists by given field
  * 
@@ -154,7 +156,12 @@ const fetchOwner = async (userId, userInfo, returnIdOnly = true) => {
 const fetchUsersAssociated = async (primaryUserId, relationType, ownerId) => {
 	try {
 		let where = { primaryUserId };
-		if (relationType) {
+		if (!relationType) {
+			where = {
+				...where,
+				relationType: { [Op.not]: GYM_COACH }
+			};
+		} else if (relationType.toLowerCase() !== 'all') {
 			where = { ...where, relationType };
 		}
 		let userWhere = { isActive: true };

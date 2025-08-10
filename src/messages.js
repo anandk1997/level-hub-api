@@ -103,4 +103,6 @@ module.exports = {
     COACH_UPDATE_SUCCESS: 'Coach updated successfully!',
     COACH_FETCH_SUCCESS: 'Coach list fetched successfully.',
     COACH_DELETED_SUCCESS: 'Coach deleted successfully.',
+    COACH_MAX_LIMIT_EXCEED: 'Coach accounts have reached maximum limit.',
+    COACH_MAX_LIMIT_EXCEED_EXCEPTION: 'CoachMaxLimitException',
 }
