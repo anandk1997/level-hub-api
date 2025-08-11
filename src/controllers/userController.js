@@ -53,10 +53,13 @@ const fetchUserProfile = async (req, res, next) => {
 		const result = await db.Users.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'fullName'],
 			where: { id: userId },
-			include: {
+			include: [{
 				model: db.Roles,
 				attributes: ['id', 'name']
-			}
+			}, {
+				attributes: ['id', 'organizationName'],
+				model: db.UserConfig
+			}]
 		});
 		return res.response(FETCH_PROFILE_SUCCESS, { profile: result });
 	} catch (error) {
@@ -89,8 +92,14 @@ const updateUserProfile = async (req, res, next) => {
       phone: phone ? phone?.trim() : null,
       gender: gender ? gender?.trim() : null,
       dob: dob,
-      organizationName: organizationName ? organizationName?.trim() : null,
     };
+		if (organizationName?.trim()) {
+			await db.UserConfig.update(
+				{ organizationName: organizationName ? organizationName?.trim() : null },
+				{ where: { userId } }
+			);
+		}
+
 		await db.Users.update(user, { where: { id: userId } });
 		return res.response(UPDATE_PROFILE_SUCCESS);
 	} catch (error) {
@@ -355,7 +364,37 @@ const fetchRelatedUsers = async (req, res, next) => {
 	}
 };
 
+/**
+ * API to fetch owner information
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchOwnerInfo = async (req, res, next) => {
+	try {
+		const ownerId = req.user?.ownerId;
+		if (!ownerId) { return res.response(USER_FETCH_SUCCESS, {}, 400); }
 
+		const ownerInfo = await db.Users.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'fullName', 'email', 'phone'],
+			where: { id: ownerId, isActive: true },
+			include: [{
+				attributes: ['id', 'name'],
+				model: db.Roles,
+				required: true
+			}, {
+				attributes: ['id', 'organizationName'],
+				model: db.UserConfig
+			}],
+			subQuery: false
+		})
+
+		return res.response(RELATED_USER_FETCH_SUCCESS, { ownerInfo });
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
 
 const delete_file = (filepath) => {
 	if (fs.existsSync(filepath)) {
@@ -412,4 +451,5 @@ module.exports = {
 	fetchUserDetails,
 	deactivateUser,
 	fetchRelatedUsers,
+	fetchOwnerInfo,
 };

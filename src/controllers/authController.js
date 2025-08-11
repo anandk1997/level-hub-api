@@ -1,8 +1,7 @@
 'use strict';
 
 const { hashSync, compareSync } = require('bcrypt');
-const { 
-  COMMON_ERR_MSG,
+const {
   SALT_ROUNDS,
   EMAIL_VERIFICATION_OTP,
   APP_NAME,
@@ -94,7 +93,8 @@ const signup = async (req, res, next) => {
     await db.UserConfig.create({
 			userId: result.id,
 			isVerified: false,
-			registrationSource: request.source
+			registrationSource: request.source,
+			organizationName: request?.organizationName ? request?.organizationName.trim() : null
 		});
 		if (request?.source === 'invite' && invite) {
 			const inviteMailData = {

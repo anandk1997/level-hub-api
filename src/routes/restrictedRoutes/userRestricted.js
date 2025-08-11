@@ -106,6 +106,7 @@ router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild)
 
 // USER MANGEMENT
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
+router.get("/user/owner", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchOwnerInfo);
 router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
 router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
 router.put("/user/deactivate/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.deactivateUser);

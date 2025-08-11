@@ -58,7 +58,7 @@ const fetchLeaderboardValidation = async (req, res, next) => {
 };
 
 /**
- * Fetch leaderboard schema validation
+ * Fetch active users schema validation
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -66,7 +66,8 @@ const fetchLeaderboardValidation = async (req, res, next) => {
  */
 const activeUsersValidation = async (req, res, next) => {
   const schema = Joi.object({
-    type: joiExtended.string().valid('all', 'monthly').optional(),
+    type: Joi.string().valid('all', 'monthly').optional(),
+    role: Joi.string().valid('all', 'coaches').allow('').optional(),
   });
   try {
     await schema.validateAsync(req.query);

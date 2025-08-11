@@ -19,7 +19,9 @@ const {
     PARENT_OWNER,
     INDIVIDUAL,
     INDIVIDUAL_OWNER,
-    CHILD
+    CHILD,
+    COACH_HEAD,
+    COACH,
   }
 } = require('../constants');
 const { calculateLevel } = require('../utils');
@@ -239,11 +241,29 @@ const fetchLeaderboard = async (req, res, next) => {
  */
 const fetchActiveUsers = async (req, res, next) => {
   try {
-		const ownerId = req.user?.ownerId || req.user?.userId, { type = 'all' } = req.query;
+		const ownerId = req.user?.ownerId || req.user?.userId, { type = 'all', role  } = req.query;
     let where = {
       ownerId,
       isActive: true,
     };
+    let include = undefined;
+    if (role === 'coaches') {
+      include = {
+        attributes: ['name'],
+        model: db.Roles,
+        where: {
+          name: [COACH_HEAD, COACH]
+        }
+      };
+    } else if (role?.toLowerCase() !== 'all') {
+      include = {
+        attributes: ['name'],
+        model: db.Roles,
+        where: {
+          name: { [Op.notIn]: [COACH_HEAD, COACH] }
+        }
+      };
+    }
     if (type === 'monthly') {
       const startDate = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
       const endDate = dayjs().endOf('month').format('YYYY-MM-DD HH:mm:ss');
@@ -252,7 +272,7 @@ const fetchActiveUsers = async (req, res, next) => {
         [Op.and]: literal(`DATE("createdAt") BETWEEN '${startDate}' AND '${endDate}'`)
       }
     }
-    const count = await db.Users.count({ where });
+    const count = await db.Users.count({ where, include });
     return res.response(DASH_USERS_FETCH_SUCCESS, { count });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });

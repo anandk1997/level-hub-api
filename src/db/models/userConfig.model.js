@@ -49,6 +49,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
       defaultValue: DataTypes.NOW
+    },
+    organizationName: {
+      type: DataTypes.STRING,
+      allowNull: true,
     }
   }, {
     timestamps: true,
