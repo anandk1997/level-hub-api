@@ -78,6 +78,8 @@ router.route("/template/:id")
 // REPORTS
 router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
 
+router.post("/report/feedback", checkPermssion(ACTIVITY_APPROVE), reportsValidation.feedbackReportValidation, reportCtrl.sendFeedbackReport);
+
 
 // DASHBOARD
 router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);

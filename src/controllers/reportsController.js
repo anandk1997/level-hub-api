@@ -5,13 +5,14 @@ const dayjs = require('dayjs');
 const { db } = require('../db');
 // const { userHelper } = require('../helpers');
 const { REPORT_FETCH_SUCCESS } = require('../messages');
+const { mailHelper } = require('../helpers');
 
 const { QueryTypes } = db.Sequelize;
 
 
 /**
  * Get a “target vs achieved” report for a given month
- * 
+ *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
@@ -86,8 +87,30 @@ const getMonthlyActivityReport = async (req, res, next) => {
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
-}
+};
+
+/**
+ * Get a “target vs achieved” report for a given month
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+*/
+const sendFeedbackReport = async (req, res, next) => {
+  try {
+    const { email, note = '' } = req.body;
+    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
+    await mailHelper.sendFeedbackMail({ fullName: "Testing Only", email, note })
+    // return res.json({ request: req.body });
+
+    return res.response(REPORT_FETCH_SUCCESS);
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 
 module.exports = {
   getMonthlyActivityReport,
+  sendFeedbackReport
 }
