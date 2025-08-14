@@ -42,9 +42,9 @@ const generateReportValidation = async (req, res, next) => {
  */
 const feedbackReportValidation = async (req, res, next) => {
   const schema = Joi.object({
-    date: joiExtended.date().format('YYYY-MM-DD').raw().required(),
+    recipientEmail: Joi.string().email({ minDomainSegments: 2 }).required(),
+    recipientId: Joi.number().integer().positive().strict().required(),
     userId: Joi.number().integer().positive().strict().required(),
-    email: Joi.string().email({ minDomainSegments: 2 }).required(),
     note: Joi.string().allow('').optional()
   });
   try {

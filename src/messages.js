@@ -64,6 +64,7 @@ module.exports = {
     ACTIVITY_DELETED_SUCCESS: 'Activity deleted successfully.',
     ACTIVITY_DELETED_FAILURE: 'Activity deleted failed.',
     REPORT_FETCH_SUCCESS: 'Montly activity report fetched successfully.',
+    REPORT_FEEDBACK_SUCCESS: 'Reminder email sent successfully.',
     DASH_ALL_STATS_FETCH_SUCCESS: 'All time activity stats fetched successfully.',
     DASH_TODAY_STATS_FETCH_SUCCESS: "Today's activity stats fetched successfully.",
     DASH_LEADERBOARD_FETCH_SUCCESS: "Leaderboard stats fetched successfully.",

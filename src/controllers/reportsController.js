@@ -4,8 +4,17 @@ const dayjs = require('dayjs');
 
 const { db } = require('../db');
 // const { userHelper } = require('../helpers');
-const { REPORT_FETCH_SUCCESS } = require('../messages');
-const { mailHelper } = require('../helpers');
+const {
+  REPORT_FETCH_SUCCESS,
+  SERVER_ERROR,
+  FORBIDDEN_EXCEPTION,
+  REPORT_FEEDBACK_SUCCESS
+} = require('../messages');
+const {
+  ROLES: { CHILD }
+} = require('../constants');
+const { userHelper, mailHelper } = require('../helpers');
+const { calculateLevel, calculateRemainingXP } = require('../utils');
 
 const { QueryTypes } = db.Sequelize;
 
@@ -90,7 +99,7 @@ const getMonthlyActivityReport = async (req, res, next) => {
 };
 
 /**
- * Get a “target vs achieved” report for a given month
+ * Send feedback and report via email
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -98,12 +107,47 @@ const getMonthlyActivityReport = async (req, res, next) => {
 */
 const sendFeedbackReport = async (req, res, next) => {
   try {
-    const { email, note = '' } = req.body;
-    const userId = req.query?.userId ? parseInt(req.query?.userId) : req.userId;
-    await mailHelper.sendFeedbackMail({ fullName: "Testing Only", email, note })
-    // return res.json({ request: req.body });
+    const { userId, recipientEmail, recipientId, note = '' } = req.body, userInfo = req.user;
+    const ownerId = userInfo?.ownerId || userInfo?.userId;
 
-    return res.response(REPORT_FETCH_SUCCESS);
+    const target = await userHelper.fetchUserTarget(ownerId);
+    const user = await db.Users.findOne({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
+      where: { id: userId, ownerId, isActive: true },
+      include: [{
+				attributes: ['name'],
+				model: db.Roles,
+			}, {
+				model: db.UserProgress,
+				attributes: ['id', 'currentXP'],
+			}],
+      subQuery: false
+    });
+    if (!user?.id) { return res.response(SERVER_ERROR, {}, 400, FORBIDDEN_EXCEPTION, false); }
+    let recipientinfo = user;
+    if (recipientId !== userId) {
+      recipientinfo = await db.Users.findOne({
+        attributes: ['id', 'fullName', 'firstName', 'lastName', 'email'],
+        where: { id: recipientId, isActive: true }
+      });
+    }
+    const monthStart = dayjs().startOf('month').format("YYYY-MM-DD");
+    const mailData = {
+      email: recipientinfo?.email || recipientEmail,
+      recipientName: recipientinfo?.fullName,
+      fullName: user?.fullName,
+      role: user?.Role?.name,
+      currentXP: user?.UserProgress?.currentXP,
+      level: calculateLevel(target?.targetXP, user?.UserProgress?.currentXP),
+      remainingXP: calculateRemainingXP(target?.targetXP, user?.UserProgress?.currentXP),
+      url: `reports?assignee=${userId}&date=${monthStart}`,
+      note: note ? note.trim() : '',
+      isChild: user?.Role?.name === CHILD
+    };
+    // return res.json({ recipientinfo, mailData, user, target, userInfo, ownerId, userId, recipientId, recipientEmail, note });
+    await mailHelper.sendFeedbackMail(mailData);
+
+    return res.response(REPORT_FEEDBACK_SUCCESS);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
