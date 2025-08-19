@@ -21,12 +21,12 @@ module.exports = {
       email: {
         type: Sequelize.STRING(128),
         allowNull: true,
-        unique: true
+        unique: false
       },
       username: {
         type: Sequelize.STRING(100),
         allowNull: true,
-        unique: true
+        unique: false
       },
       phone: {
         type: Sequelize.STRING(20),
@@ -72,13 +72,20 @@ module.exports = {
           onDelete: 'SET NULL'
         }
       },
-      createdAt: {
+      isActive: {
+        type: Sequelize.BOOLEAN,
         allowNull: false,
-        type: Sequelize.DATE
+        defaultValue: true
       },
-      updatedAt: {
+      createdAt: {
+        type: Sequelize.DATE,
         allowNull: false,
-        type: Sequelize.DATE
+        defaultValue: Sequelize.NOW
+      },  
+      updatedAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
       }
     });
   },

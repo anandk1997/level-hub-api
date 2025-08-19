@@ -14,6 +14,8 @@ const {
 	}
 } = require('../constants');
 
+const { Op } = db.Sequelize;
+
 /**
  * Check if user exists by given field
  * 
@@ -24,11 +26,18 @@ const {
  */
 const checkIfUserExists = async (value, field, userId = null, returnResult = false) => {
 	try {
-		let where = { [field]: value };
+		let where = { [field]: value, isActive: true };
 		if (userId) {
 			where = { ...where, _id: { $ne: userId } };
 		}
-		const result = await db.Users.findOne({ where });
+		const result = await db.Users.findOne({
+			where,
+			include: {
+				model: db.UserConfig,
+				attributes: ['isVerified'],
+				required: true,
+			}
+		});
 		if (returnResult) { return result; }
 		return result ? true : false;
 	} catch (error) {
@@ -62,6 +71,7 @@ const fetchUser = async (email, username, attributes) => {
  *
  * @param {number} userId
  * @param {Object} userInfo
+ * @param {string} relationType
  * @returns {number}
  */
 const fetchPrimaryUser = async (userId, userInfo, relationType) => {
@@ -140,16 +150,25 @@ const fetchOwner = async (userId, userInfo, returnIdOnly = true) => {
  *
  * @param {number} primaryUserId
  * @param {string?} relationType
+ * @param {number?} ownerId
  * @returns {Object}
  */
-const fetchUsersAssociated = async (primaryUserId, relationType) => {
+const fetchUsersAssociated = async (primaryUserId, relationType, ownerId) => {
 	try {
 		let where = { primaryUserId };
-		if (relationType) {
+		if (!relationType) {
+			where = {
+				...where,
+				relationType: { [Op.not]: GYM_COACH }
+			};
+		} else if (relationType.toLowerCase() !== 'all') {
 			where = { ...where, relationType };
 		}
+		let userWhere = { isActive: true };
+		if (ownerId) { userWhere = { ...userWhere, ownerId } }
 		return await db.Users.findAll({
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username'],
+			where: userWhere,
 			include: [{
 				model: db.UserAssociations,
 				as: 'associatedUser',
@@ -202,6 +221,32 @@ const fetchUserTarget = async (userId, attributes = ['id', 'targetXP']) => {
 	});
 }
 
+/**
+ * Fetches the parent by child ID
+ *
+ * @param {number} userId
+ * @param {string} relationType
+ * @returns {number}
+ */
+const fetchParent = async (userId, relationType) => {
+	try {
+		const user = await db.Users.findOne({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'isActive', 'ownerId'],
+			where: { isActive: true },
+			include: {
+				model: db.UserAssociations,
+				as: 'primaryUser',
+				attributes: [],
+				where: { associatedUserId: userId, relationType },
+			},
+			subQuery: false,
+		});
+		return user;
+	} catch (error) {
+		throw error;
+	}
+};
+
 module.exports = {
 	checkIfUserExists,
 	fetchUser,
@@ -212,4 +257,5 @@ module.exports = {
 	fetchUsersAssociated,
 	fetchAssociations,
 	fetchUserTarget,
+	fetchParent,
 };

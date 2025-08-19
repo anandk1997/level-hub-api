@@ -10,7 +10,10 @@ const {
 		PARENT_CHILD,
 	},
 	ROLES: {
-		PARENT_OWNER
+		PARENT_OWNER,
+		PARENT,
+		COACH_HEAD,
+		COACH
 	}
 } = require('../constants');
 const { db } = require('../db');
@@ -28,9 +31,14 @@ const {
 	ROLE_NOT_EXISTS_EXCEPTION,
 	CHILD_CREATE_SUCCESS,
 	USER_ASSOCIATED_SUCCESS,
+	USERS_FETCH_SUCCESS,
+	USER_FETCH_SUCCESS,
+	USER_DEACTIVATED_SUCCESS,
+	RELATED_USER_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 
+const { literal, Op, where } = db.Sequelize;
 
 /**
  * API to fetch user profile
@@ -45,14 +53,17 @@ const fetchUserProfile = async (req, res, next) => {
 		const result = await db.Users.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'dob', 'gender', 'profileImage', 'fullName'],
 			where: { id: userId },
-			include: {
+			include: [{
 				model: db.Roles,
 				attributes: ['id', 'name']
-			}
+			}, {
+				attributes: ['id', 'organizationName'],
+				model: db.UserConfig
+			}]
 		});
 		return res.response(FETCH_PROFILE_SUCCESS, { profile: result });
 	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
@@ -81,8 +92,14 @@ const updateUserProfile = async (req, res, next) => {
       phone: phone ? phone?.trim() : null,
       gender: gender ? gender?.trim() : null,
       dob: dob,
-      organizationName: organizationName ? organizationName?.trim() : null,
     };
+		if (organizationName?.trim()) {
+			await db.UserConfig.update(
+				{ organizationName: organizationName ? organizationName?.trim() : null },
+				{ where: { userId } }
+			);
+		}
+
 		await db.Users.update(user, { where: { id: userId } });
 		return res.response(UPDATE_PROFILE_SUCCESS);
 	} catch (error) {
@@ -101,13 +118,7 @@ const changePassword = async (req, res, next) => {
 	try {
 		const { oldPassword, newPassword } = req.body, userId = req.userId;
 		const user = await db.Users.findOne({
-			attributes: [
-				'id',
-				'firstName',
-				'lastName',
-				'email',
-				'password',
-			],
+			attributes: [ 'id', 'firstName', 'lastName', 'email', 'password' ],
 			where: { id: userId },
 		});
 		if (!user?.id) { return res.response(USER_DOESNT_EXISTS, {}, 401, USER_DOESNT_EXISTS_EXCEPTION, false); }
@@ -133,8 +144,10 @@ const changePassword = async (req, res, next) => {
  */
 const fetchAssociatedUsers = async (req, res, next) => {
 	try {
-		const userId = req.userId, relation = req?.params?.relation, userInfo = req.user;
-		let currentUser;
+		const { relation } = req?.query, userInfo = req.user;
+		let ownerId = userInfo?.ownerId || userInfo?.userId, currentUser;
+		const parentRole = [PARENT_OWNER, PARENT];
+		if (parentRole.includes(userInfo.role)) { ownerId = userInfo?.userId }
 		if (userInfo.role === PARENT_OWNER) {
 			currentUser = {
 				id: userInfo.userId,
@@ -145,7 +158,7 @@ const fetchAssociatedUsers = async (req, res, next) => {
 				lastName: userInfo.lastName,
 			};
 		}
-		let associatedUsers = await userHelper.fetchUsersAssociated(userId, relation);
+		let associatedUsers = await userHelper.fetchUsersAssociated(ownerId, relation);
 		if (currentUser?.id) {
 			associatedUsers = [
 				currentUser,
@@ -158,262 +171,228 @@ const fetchAssociatedUsers = async (req, res, next) => {
 	}
 };
 
-
-
 /**
- * Fetch user listing
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- * @returns {JSON}
+ * Generates filter, sorting, and search criteria for querying user listing
+ *
+ * @param {string} role
+ * @param {string} sortBy
+ * @param {string} sort
+ * @param {string} search
+ * @returns {Promise<{ likeSearch: object, order: Array, roleWhere: object }>}
  */
-const get_users = async (req, res, next) => {
-	let request = {};
-	request.orderBy    	= (req.body.orderBy !== undefined  && req.body.orderBy !== "") ? req.body.orderBy : 'id';
-	request.order   		= (req.body.order !== undefined && req.body.order !== "") ? req.body.order : 'ASC';
-	request.pageSize 		= (req.body.pageSize !== undefined) ? req.body.pageSize : 10;
-	request.pageOffset 	= (req.body.pageOffset !== undefined && req.body.pageOffset !== null) ? req.body.pageOffset : 0;
-	request.searchText 	= (req.body.searchText !== undefined) ? req.body.searchText : '';
+const setUsersFilter = async (role, sortBy, sort, search) => {
+	search = search.trim().toLowerCase();
 
-	const searchColumns = ['name', 'email', 'city', 'state', 'rentAmount', 'apartmentName'];
+	let roleWhere = {}, orderBy = [];
+	if (role.toLowerCase() !== "all") {
+		roleWhere = { ...roleWhere, name: role }
+	}
+	if (sortBy === 'fullName') {
+		orderBy = [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)];
+	} else if (sortBy === 'role') {
+		orderBy = [db.Roles, 'name']
+	} else {
+		orderBy = [sortBy];
+	}
+	const order = [...orderBy, sort];
+
+	const searchColumns = ['email', 'username', 'firstName'];
 	let likeSearch = {};
-	if (request.searchText !== '') {
+	if (search !== '') {
 		const likeColumns = searchColumns.map(column => {
-			return { [column]: { [Op.like]: '%' + request.searchText + '%' } };
+			return { [column]: { [Op.iLike]: '%' + search + '%' } };
 		});
-		likeSearch = { [Op.or]: likeColumns };
+		const fullNameSearch = where(
+			literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
+			{ [Op.iLike]: '%' + search + '%' }
+		);
+		likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
 	}
-	let order = [request.orderBy, request.order];
-	/* if (request.orderBy === "user_paid_plans") { 
-		order = ['user_paid_plans', request.orderBy, request.order];
-	} */
-	
+	return {
+		likeSearch,
+		order,
+		roleWhere
+	}
+};
+
+/**
+ * API to fetch user listing
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchUsers = async (req, res, next) => {
 	try {
-		// const currentDateTime = moment().toDate();
-		let result = await db.users.findAndCountAll({
-			attributes: ['id', 'name', 'email', 'city', 'state', 'rentAmount', 'apartmentName', 'createdAt', 'updatedAt'],
+		let { page = 1, pageSize = 10, role = "ALL", sortBy = 'fullName', sort = 'ASC', search = '' } = req.body, userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+    const pageOffset = pageSize * (page - 1);
+
+		const { likeSearch, order, roleWhere } = await setUsersFilter(role, sortBy, sort, search);
+
+		const target = await db.Targets.findOne({
+      attributes: ['id', 'targetXP'],
+      where: { userId: ownerId },
+    });
+
+		const { count, rows } = await db.Users.findAndCountAll({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'profileImage'],
 			where: {
-				...likeSearch,
-				role: { [Op.not]: 'admin' },
+				ownerId,
+				isActive: true,
+				...likeSearch
 			},
-			/* include: {
-				model: UserPaidPlans,
-				on: {
-					col1: where(col("user_paid_plans.user_id"), "=", col("users.id")),
-					col2: where(col("user_paid_plans.end_date"), ">=", currentDateTime),
-					col3: where(col("user_paid_plans.is_active"), "=", true)
+			include: [{
+				attributes: ['name'],
+				model: db.Roles,
+				where: {
+					name: {
+						[Op.notIn]: [COACH_HEAD, COACH],
+					},
+					...roleWhere
 				},
-			}, */
-			order: [order],
-			offset: request.pageOffset,
-			limit: request.pageSize,
+			}, {
+				model: db.UserProgress,
+				attributes: ['id', 'userId', 'currentXP'],
+				subQuery: false
+			}],
+			limit: pageSize,
+      offset: pageOffset,
+      order: [order],
+      subQuery: false
 		});
-		return res.json({ success: true, message: 'Fetched users successfully!', data: result });
+
+		const users = rows.map(user => {
+			const userInfo = {
+				...user.dataValues,
+				targetXP: target?.targetXP,
+        currentXP: user?.UserProgress?.currentXP,
+	      level: target?.targetXP && user?.UserProgress?.currentXP ? Math.floor(user?.UserProgress?.currentXP / target?.targetXP) : 0
+			};
+			delete userInfo.UserProgress;
+			return userInfo;
+		});
+		return res.response(USERS_FETCH_SUCCESS, { count, users });
 	} catch (error) {
-		return next(new ErrorHandler(500, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
-const get_user_filter = async (req, res, next) => {
+/**
+ * API to fetch user details
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchUserDetails = async (req, res, next) => {
 	try {
-		let result = await db.users.findAll({
-			attributes: ['id', 'name'],
+    const userId = parseInt(req?.params?.id), userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+		const user = await db.Users.findOne({
+			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'profileImage', 'phone', 'gender', 'dob'],
 			where: {
-				role: 'user',
+				id: userId,
+				ownerId,
+				isActive: true
 			},
-			order: [[ 'name', 'ASC' ]],
-		});
-		return res.json({ success: true, message: 'Fetched user filter successfully!', data: result });
-	} catch (error) {
-		return next(new ErrorHandler(500, config.common_err_msg, error));		
-	}
-};
-
-/**
- * Add update user
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const save_user = async (req, res, next) => {
-	const uploadDir = 'assets/profile_images/';
-	let form = new IncomingForm();
-	
-	form.uploadDir = uploadDir;		//set upload directory
-	form.keepExtensions = true;		//keep file extension
-	
-	form.parse(req, async (err, fields, files) => {
-		if (err) { return next(new ErrorHandler(500, config.common_err_msg, err)); }
-		// const userId = req.user_id;
-		let filePath = (files && files.file) ? files.file.path : null;
-		let filename = (filePath) ? filePath.replace(uploadDir, '') : null;
-		if (!fields.first_name || !fields.email) { delete_file(filePath); return next(new ErrorHandler(400, 'Missing required name or label fields')); }
-		fields.first_name = fields.first_name.trim();
-		fields.email = fields.email.trim();
-		fields.profile_image = filename;
-
-		// return res.json({ success: false, message: 'User created successfully!', fields });
-		try {
-			const userId = (fields.type == 'edit' && fields.id !== undefined) ? fields.id : false;
-			let ifExist = await check_if_email_exist(fields.email, userId, next);
-			if (ifExist) {
-				return res.json({ success: false, message: 'Email already exists!' });
-			}
-
-			let user = {
-				first_name	: fields.first_name,
-				last_name	: fields.last_name,
-				email		: fields.email,
-				mobile		: fields.mobile,
-			};
-			if (fields.type == 'add') {
-				user.password = await bcrypt.hashSync(fields.password, saltRounds);
-				user.profile_image = fields.profile_image;
-				const result = await User.create(user);
-				return res.json({ success: true, message: 'User created successfully!', result });
-			} else {
-				const result = await User.update(user, { where: { id: fields.id } });
-				return res.json({ success: true, message: 'User updated successfully!', result });
-			}
-		} catch (error) {
-			delete_file(filePath);
-			next(new ErrorHandler(200, config.common_err_msg, error));
-		}		
-	});	
-	form.on('error', (err) => {
-		return next(new ErrorHandler(500, config.common_err_msg, err));
-	});
-};
-
-/**
- * send otp on sign up
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */ 
-const send_otp = async (req, res, next) => {
-		const userId = (req.body.type == 'edit' && req.body.id !== undefined) ? req.body.id : false;
-		let ifExist = await check_if_email_exist(req.body.email, userId, next);
-		if (ifExist) {
-			return res.json({ success: false, message: 'Email already exists!' });
-		}
-		let otp = Math.floor(Math.random() * 100000000);
-		try {
-			const mailer = new Mailer();
-			//const resetLink = config.site_url + 'reset-pasword/' + mailData.hash;
-
-			let mailText = 'Otp for signup -'+otp;
-			mailText += "\n\n\nThanks and Regards\n" + config.smtp.fromAlias;
-
-			let mailHtml = "<b>Otp for signup -"+otp+"</b>";
-			mailHtml += "<br/><br/><br/><b>Thanks and Regards<br/>" + config.smtp.fromAlias + "</b>";
-
-			const mailDetails = {
-				to: req.body.email,
-				// to: 'kanishkgupta55@gmail.com',
-				subject: 'OTP For Signup', // Subject line
-				text: mailText, // plain text body
-				html: mailHtml, // html body
-			};
-			mailer.sendMail(mailDetails);
-		
-			/*mailgun.messages().send(data, function (error, body) {
-			  console.log(body);
-			});*/
-			return res.json({ success: true,otp: otp});			
-		} catch (error) {
-			
-			next(new ErrorHandler(200, config.common_err_msg, error));
-		}
-};
-
-/**
- * Fetch user details
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const get_user_details = async (req, res, next) => {
-	const userId = parseInt(req.params.id);
-	try {
-		const result = await db.users.findOne({
-			attributes: ['id', 'name', 'email', 'address', 'city', 'state', 'zip', 'apartmentName', 'rentAmount', 'impactReason', 'profileImage', 'createdAt'],
-			where: { id: userId, role: { [Op.not]: 'admin' } },
 			include: {
-				model: db.applications
-			}
+				attributes: ['name'],
+				model: db.Roles,
+			},
+      subQuery: false
 		});
-		return res.json({ success: true, message: 'Fetched user details successfully!', data: { userDetails: result } });
+
+		return res.response(USER_FETCH_SUCCESS, { user });
 	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
-
 /**
- * Add delete user
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * API to deactivate user and it's associated users if any
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const delete_users = async (req, res, next) => {
-	/* const request = req.body;
-	if (!request.deleteIds) { next(new ErrorHandler(400, 'Missing delete IDs')); }
-	// return res.json({ success: true, message: 'Fetched user successfully!', request });
-
+const deactivateUser = async (req, res, next) => {
 	try {
-		const result = await User.destroy({ where: { id: { [Op.in]: request.deleteIds } } });
-		return res.json({ success: true, message: 'User deleted successfully!', result });
+    const userId = parseInt(req?.params?.id), userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+		let deactivateIds = [userId];
+		const associatedUsers = await db.UserAssociations.findAll({ where: { primaryUserId: userId }  });
+		if (associatedUsers?.length) {
+			deactivateIds = [
+				...deactivateIds,
+				...associatedUsers.map(associated => associated.associatedUserId)
+			];
+		}
+		const deactivated = await db.Users.update({ isActive: false }, { where: { id: deactivateIds, ownerId }});
+		return res.response(USER_DEACTIVATED_SUCCESS, deactivated.length ? deactivated[0] : 0);
 	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
-	} */
-};
-
-/**
- * Fetch admin profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const get_profile = async (req, res, next) => {
-	try {
-		const userId = req.user_id;
-		let result = await User.findOne({
-			attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'profile_image', 'mobile'],
-			where: { id: userId, is_deleted: false },
-			raw: true,
-		}); // , logging: console.log
-		result.full_name = (result.first_name + ' ' + result.last_name).trim();
-		return res.json({ success: true, message: 'Fetch user profile successfully!', data: { profile_details: result } });
-	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
+/**
+ * API to fetch related associated users
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchRelatedUsers = async (req, res, next) => {
+	try {
+		const relation = req.params.type, userId = parseInt(req.params.id), userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+		let associatedUsers;
+
+		switch (relation) {
+			case 'child':
+				associatedUsers = await userHelper.fetchUsersAssociated(userId, PARENT_CHILD, ownerId);
+				break;
+			default:
+				associatedUsers = await userHelper.fetchParent(userId, PARENT_CHILD);
+				break;
+		}
+
+		return res.response(RELATED_USER_FETCH_SUCCESS, { associatedUsers });
+	} catch (error) {
+		return next({ error, statusCode: 500, message: error?.message });
+	}
+};
 
 /**
- * Update profile image
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
+ * API to fetch owner information
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
-const update_password = async (req, res, next) => {
+const fetchOwnerInfo = async (req, res, next) => {
 	try {
-		const request = req.body, userId = req.user_id;
-		if (!request.password) { return next(new ErrorHandler(400, 'Missing required fields!')); }
-		const passwordHash = await bcrypt.hashSync(request.password, saltRounds);
-		// return res.json({ success: true, message: 'Fetch user profile successfully!', request, passwordHash });
-		let result = await User.update({ password: passwordHash }, { where: { id: userId, role: 'admin' } }); // , logging: console.log
-		return res.json({ success: true, message: 'Updated password successfully!' });
+		const ownerId = req.user?.ownerId;
+		if (!ownerId) { return res.response(USER_FETCH_SUCCESS, {}, 400); }
+
+		const ownerInfo = await db.Users.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'fullName', 'email', 'phone'],
+			where: { id: ownerId, isActive: true },
+			include: [{
+				attributes: ['id', 'name'],
+				model: db.Roles,
+				required: true
+			}, {
+				attributes: ['id', 'organizationName'],
+				model: db.UserConfig
+			}],
+			subQuery: false
+		})
+
+		return res.response(RELATED_USER_FETCH_SUCCESS, { ownerInfo });
 	} catch (error) {
-		next(new ErrorHandler(200, config.common_err_msg, error));
+		return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
@@ -423,58 +402,6 @@ const delete_file = (filepath) => {
 	}
 };
 
-
-
-
-
-/**
- * Update user profile
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
- const update_user_profile = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		// return res.json({ request, userId })
-		const user = {
-			name					: request.name,
-			address				: request.address,
-			city					: request.city,
-			state					: request.state,
-			zip						: request.zip,
-			apartmentName	: request.apartmentName,
-			unitNumber		: request.unitNumber ? request.unitNumber : null,
-			rentAmount		: request.rentAmount,
-			impactReason	: request.impactReason,
-			
-		};
-		// return res.json({ success: false, message: 'Fetch user profile successfully!', request, userId, user });		
-		let result = await db.users.update(user, { where: { id: userId } }); // , logging: console.log
-		return res.json({ success: true, message: 'Updated profile successfully!', result });
-	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
-};
-
-/**
- * Update user profile password
- * 
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const update_user_password = async (req, res, next) => {
-	try {
-		const request = req.body, userId = req.user_id;
-		const passwordHash = await bcrypt.hashSync(request.password, saltRounds);
-		await db.users.update({ password: passwordHash }, { where: { id: userId, role: 'user' } });
-		return res.json({ success: true, message: 'Updated password successfully!' });
-	} catch (error) {
-		return next(new ErrorHandler(200, config.common_err_msg, error));
-	}   
-};
 
 /**
  * Update profile image
@@ -520,4 +447,9 @@ module.exports = {
 	updateUserProfile,
 	changePassword,
 	fetchAssociatedUsers,
+	fetchUsers,
+	fetchUserDetails,
+	deactivateUser,
+	fetchRelatedUsers,
+	fetchOwnerInfo,
 };

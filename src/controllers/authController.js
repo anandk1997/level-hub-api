@@ -1,19 +1,18 @@
 'use strict';
 
 const { hashSync, compareSync } = require('bcrypt');
-const { 
-  COMMON_ERR_MSG,
+const {
   SALT_ROUNDS,
   EMAIL_VERIFICATION_OTP,
   APP_NAME,
   OTP_VALIDITY,
 	PASS_RESET_OTP,
-} = require('../../config.js');
+} = require('../../config');
 const Auth = require('../middlewares/auth');
 const dayjs = require('dayjs');
 
 const { db } = require('../db');
-const { userHelper, Mailer } = require('../helpers');
+const { userHelper, Mailer, mailHelper } = require('../helpers');
 const { generateOtp } = require('../utils');
 const {
   EMAIL_EXISTS,
@@ -33,8 +32,15 @@ const {
 	RESENT_OTP_SUCCESS,
 	RESET_CODE_SUCCESS,
 	PASSWORD_UPDATE_SUCCESS,
-	RESET_CODE_VERIFIED
-} = require('../messages.js');
+	RESET_CODE_VERIFIED,
+	INVITE_INVALID,
+	INVITE_INVALID_EXCEPTION
+} = require('../messages');
+const {
+	USER_ASSOCIATIONS: {
+		ORGANIZATION_USER
+	}
+} = require('../constants');
 
 const { checkIfUserExists } = userHelper;
 const { Op, where, col, fn } = db.Sequelize;
@@ -50,15 +56,16 @@ const signup = async (req, res, next) => {
   const request = req.body;
 	let invite;
   try {
+		if (request?.source === 'invite') {
+			invite = await checkIfValidInvite(request.email, request.token, request.type);
+		}
+    if (request?.source === 'invite' && !invite) { return res.response(INVITE_INVALID, {}, 410, INVITE_INVALID_EXCEPTION, false); }
+
+		// TODO: Add check for max allowed user for an owner
     const emailExists = await checkIfUserExists(request.email, 'email');
     if (emailExists) { return res.response(EMAIL_EXISTS, {}, 409, EMAIL_EXISTS_EXCEPTION, false); }
     // const phoneExists = await checkIfUserExists(request.phone, 'phone');
     // if (phoneExists) { return res.response(PHONE_EXISTS, {}, 409, PHONE_EXISTS_EXCEPTION, false); }
-		if (request?.source === 'invite') {
-			invite = await checkIfValidInvite(request.email, request.token);
-		}
-		return res.json({ invite, emailExists, request });
-    
     const password = await hashSync(request.password, SALT_ROUNDS);
 
     const role = await db.Roles.findOne({
@@ -71,12 +78,13 @@ const signup = async (req, res, next) => {
       firstName: request.firstName.trim(),
       lastName: request.lastName ? request.lastName.trim() : null,
       email: request.email.trim(),
-      phone: request?.phone? request?.phone?.trim() : null,
-      gender: request?.gender? request?.gender?.trim() : null,
+      phone: request?.phone ? request?.phone?.trim() : null,
+      gender: request?.gender ? request?.gender?.trim() : null,
       password,
       dob: request.dob || null,
       roleId: role.id,
 			isPrimaryAccount: request?.source === 'self',
+			ownerId: request?.source === 'invite' && invite?.ownerId ? invite?.ownerId : null
     };
 
     const result = await db.Users.create(user);
@@ -85,13 +93,53 @@ const signup = async (req, res, next) => {
     await db.UserConfig.create({
 			userId: result.id,
 			isVerified: false,
-			registrationSource: request.source
+			registrationSource: request.source,
+			organizationName: request?.organizationName ? request?.organizationName.trim() : null
 		});
+		if (request?.source === 'invite' && invite) {
+			const inviteMailData = {
+				fullName: invite?.inviteOwner.fullName,
+				inviteeName: result.fullName,
+				email: invite?.inviteOwner?.email,
+			};
+			await invite.update({ status: 'accepted', userId: result.id });
+			await db.UserAssociations.create({
+				primaryUserId: invite?.ownerId,
+				associatedUserId: result.id,
+				relationType: ORGANIZATION_USER,
+				lastLoginAt: null,
+			});
+			await mailHelper.sendInviteAcceptanceMail(inviteMailData)
+		}
     await sendRegistrationOTP({ fullName: result.fullName, email: user.email, otp });
     return res.response(SIGNUP_SUCCESS, {}, 201);
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
+};
+
+
+const checkIfValidInvite = async (email, token, role) => {
+	try {
+		return await db.Invites.findOne({
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
+			where: {
+				email,
+				token,
+				role,
+				expiryDate: { [Op.gte]: dayjs().toDate() },
+				status: 'pending',
+			},
+			include: {
+				model: db.Users,
+				as: 'inviteOwner',
+				required: true,
+				attributes: ['id', 'fullName', 'firstName', 'lastName', 'email'],
+			}
+		});
+	} catch (error) {
+		throw error;
+	}
 };
 
 /**
@@ -182,28 +230,6 @@ const resendRegistrationOtp = async (req, res, next) => {
 	}
 };
 
-const checkIfValidInvite = async (email, token) => {
-	try {
-		return await db.Invites.findOne({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
-			where: { email, token },
-			include: [{
-				model: db.Users,
-				as: 'sentByUser',
-				required: true,
-				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}, {
-				model: db.Users,
-				as: 'inviteOwner',
-				required: true,
-				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}]
-		});
-	} catch (error) {
-		throw error;
-	}
-};
-
 /**
  * Validate user credentials
  * 
@@ -218,19 +244,13 @@ const signin = async (req, res, next) => {
 
 	try {
 		const user = await db.Users.findOne({
-			attributes: [
-				'id',
-				'firstName',
-				'lastName',
-				'email',
-				'password',
-				'fullName'
-			],		
+			attributes: [ 'id', 'firstName', 'lastName', 'email', 'password', 'fullName', 'isActive' ],
 			where: {
 				[Op.or]: [
 					where(fn('LOWER', col('email')), request.email),
 					where(fn('LOWER', col('username')), request.email),
-				]
+				],
+				isActive: true
 			},
 			include: [{
 				model: db.UserConfig,
@@ -238,7 +258,7 @@ const signin = async (req, res, next) => {
 				required: true,
 			}, {
 				model: db.Roles,
-				attributes: ['name'],
+				attributes: ['name', 'isSuperAdmin'],
 				required: true,
 				include: {
 					model: db.Permissions,
@@ -257,6 +277,10 @@ const signin = async (req, res, next) => {
 			return res.response(INCORRECT_PASS, {}, 401, INCORRECT_PASS_EXCEPTION, false);
 		}
 		if (!user.UserConfig.isVerified) { return res.response(ACCOUNT_NOT_VERIFIED, {}, 403, ACCOUNT_NOT_VERIFIED_EXCEPTION, false); }
+		await db.UserConfig.update(
+			{ lastLoginAt: dayjs().toDate() },
+			{ where: { userId: user?.id } }
+		);
 
 		const userData = {
 			id: user.id,
@@ -264,8 +288,9 @@ const signin = async (req, res, next) => {
 			email: user.email,
 			role: user?.Role?.name,
 		};
+		const isSuperAdmin = user?.Role?.isSuperAdmin;
 
-		const token = await Auth.authorize(userData, '1d');
+		const token = await Auth.authorize(userData, '1d', isSuperAdmin);
 		userData.permissions = user?.Role?.permissions;
 		return res.response(SIGNIN_SUCCESS, { user: userData, token });
 

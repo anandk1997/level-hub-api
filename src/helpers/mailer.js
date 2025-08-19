@@ -43,7 +43,8 @@ class Mailer {
 					}
 				];
 			}
-	 
+			// console.log(mailDetails.text);
+			// return mailDetails.text;
 
 			const info = await this.transporter.sendMail({
 				from: '"' + SMTP.fromAlias + '" <' + SMTP.fromEmail + '>', // sender address

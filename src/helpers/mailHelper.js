@@ -120,8 +120,116 @@ const sendInviteEmail = async (mailData) => {
 	}
 };
 
+
+/**
+ * Send invite acceptance email to owner
+ *
+ * @param {Object} mailData
+ * @param {string} mailData.fullName
+ * @param {string} mailData.inviteeName
+ * @param {string} mailData.email
+ */
+const sendInviteAcceptanceMail = async (mailData) => {
+	try {
+		const mailer = new Mailer();
+
+		let mailText = `Hi ${mailData.fullName} \n\nGood news — ${mailData.inviteeName} has just accepted your invitation and successfully created their account.`;
+
+		let mailHtml =
+			`<b>Hi ${mailData.fullName},</b><br/><br/>
+			Good news — <b>${mailData.inviteeName}</b> has just accepted your invitation and successfully created their account.`;
+
+		const mailDetails = {
+			to: mailData.email,
+			subject: `${mailData.inviteeName} Has Accepted Your Invitation`, // Subject line
+			text: mailText, // plain text body
+			html: mailHtml, // html body
+			priority: "high",
+			useTemplate: true,
+			sendBCC: false,
+		};
+		return await mailer.sendMail(mailDetails);
+	} catch (error) {
+		console.log("ERROR in sendInviteAcceptanceMail : ", error);
+		throw error;
+	}
+};
+
+
+/**
+ * Send invite acceptance email to owner
+ *
+ * @param {Object} mailData
+ * @param {string} mailData.fullName
+ * @param {string} mailData.inviteeName
+ * @param {string} mailData.email
+ */
+const sendFeedbackMail = async ({
+	email,
+	recipientName,
+	fullName,
+	currentXP,
+	level,
+	remainingXP,
+	url,
+	note,
+	isChild,
+}) => {
+	try {
+		const mailer = new Mailer();
+
+		const reportLink = `${SITE_URL}${url}`;
+
+		const subject = isChild ? `${fullName}'s Progress & Feedback from Your Coach` : `Your Latest Progress & Feedback from Your Coach`;
+
+		const intro = isChild
+		? `Just a quick reminder to check in on ${fullName}'s latest progress.`
+		: `Just a quick reminder about your latest performance update.`;
+
+		const progress =
+			`<b>Level: ${level}</b><br/>
+			<b>Current XP: ${currentXP}</b><br/>
+			Only <b>${remainingXP} XP</b> to go for the next level, let's make this final stretch count!`;
+
+		const feedbackSection = note ? `Here's my personal feedback for ${isChild ? fullName : 'you'}</b><br/><i>${note}</i>` : '';
+
+		const outro = isChild
+    ? `Your encouragement can make all the difference. Let's keep ${fullName} motivated and moving forward!`
+    : `Stay consistent and keep pushing—you're closer to your next milestone than you think!`;
+
+
+		let mailText = `Hi ${recipientName} \n\n${intro} \n\n${progress} \n\n${feedbackSection} \n\nYou can view the complete performance report here: \n${reportLink} \n\n${outro}`;
+		mailText = mailText.replace(/<\/?b>/g, "")
+		mailText = mailText.replace(/<br\s*\/?>/gi, '\n');
+
+		const mailHtml =
+			`<b>Hi ${recipientName},</b><br/><br/>
+			${intro}<br/><br/>
+			${progress}<br/><br/>
+			${feedbackSection}<br/><br/>
+			You can view the complete performance report here: <a style="color:blue" href=${reportLink} target="_blank">View Report<a/></b><br/><br/>
+			${outro}<br/>`;
+
+		const mailDetails = {
+			to: email,
+			subject: subject,
+			text: mailText, // plain text body
+			html: mailHtml, // html body
+			priority: "high",
+			useTemplate: true,
+			sendBCC: false,
+		};
+		return await mailer.sendMail(mailDetails);
+	} catch (error) {
+		console.log("ERROR in sendFeedbackMail : ", error);
+		throw error;
+	}
+};
+
 module.exports = {
 	sendLevelUpEmail,
   sendLevelUpEmailToParent,
 	sendInviteEmail,
+	sendInviteAcceptanceMail,
+	sendFeedbackMail,
 }

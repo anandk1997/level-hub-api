@@ -12,6 +12,7 @@ const {
   userCtrl,
   childCtrl,
   inviteCtrl,
+  coachCtrl,
 } = require("../../controllers");
 const {
   levelValidation,
@@ -35,6 +36,11 @@ const {
     TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
+    CHILD_MANAGE,
+    COACH_MANAGE
+  },
+  USER_ASSOCIATIONS: {
+    GYM_COACH
   }
 } = require('../../constants');
 
@@ -70,14 +76,19 @@ router.route("/template/:id")
   .delete(templateCtrl.deleteActivityTemplate);
 
 // REPORTS
-router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), reportsValidation.generateReportValidation, reportCtrl.getMonthlyActivityReport);
+router.get("/report/activity", checkPermssion(ACTIVITY_VIEW), reportsValidation.generateReportValidation, checkAssociatedUser('query', 'userId'), reportCtrl.getMonthlyActivityReport);
+
+router.post("/report/feedback", checkPermssion(ACTIVITY_APPROVE), reportsValidation.feedbackReportValidation, reportCtrl.sendFeedbackReport);
 
 
 // DASHBOARD
 router.get("/dashboard/monthly", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashValidation.monthlyActivityHistValidation, dashCtrl.fetchMonthlyActivityHistory);
 router.get("/dashboard/all", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchAllTimeActivities);
 router.get("/dashboard/today", checkPermssion(ACTIVITY_VIEW), checkAssociatedUser('query', 'userId'), dashCtrl.fetchTodaysActivities);
-router.get("/dashboard/leaderboard", checkPermssion(SUBACCOUNT_MANAGE), dashCtrl.fetchLeaderboard);
+router.get("/dashboard/leaderboard", checkPermssion(ACTIVITY_VIEW), dashValidation.fetchLeaderboardValidation, dashCtrl.fetchLeaderboard);
+router.get("/dashboard/users", checkPermssion(ACTIVITY_VIEW), dashValidation.activeUsersValidation, dashCtrl.fetchActiveUsers);
+router.get("/dashboard/invites", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchPendingInvites);
+router.get("/dashboard/totalXP", checkPermssion(ACTIVITY_VIEW), dashCtrl.fetchCumulativeXP);
 
 // USERS
 router.put("/password/change", checkPermssion(ACCOUNT_MANAGE), userValidation.changePasswordValidation, userCtrl.changePassword);
@@ -88,14 +99,20 @@ router.route("/profile")
 
 // CHILD MANAGEMENT
 router.route("/child")
-  .all(checkPermssion(SUBACCOUNT_MANAGE))
+  .all(checkPermssion(CHILD_MANAGE))
   .post(userValidation.childAccountValidation, childCtrl.createChildAccount)
   .put(userValidation.updateChildValidation, childCtrl.updateChild)
   .get(childCtrl.fetchChildren);
-router.put("/child/password/reset", checkPermssion(SUBACCOUNT_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
-router.delete("/child/:id", checkPermssion(SUBACCOUNT_MANAGE), childCtrl.deleteChild);
+router.put("/child/password/reset", checkPermssion(CHILD_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
+router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild);
 
-router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchAssociatedUsers);
+// USER MANGEMENT
+router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
+router.get("/user/owner", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchOwnerInfo);
+router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
+router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
+router.put("/user/deactivate/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.deactivateUser);
+router.get("/user/:type/:id", checkPermssion(ACCOUNT_MANAGE), userValidation.relatedUsersValidation, userCtrl.fetchRelatedUsers);
 
 // INVITE 
 router.route("/invite")
@@ -108,5 +125,16 @@ router.route("/invite/:id")
   .get(inviteCtrl.fetchInviteDetails)
   .delete(inviteCtrl.deleteInvite);
 
+
+// COACH MANAGEMENT
+router.route("/coach")
+  .all(checkPermssion(COACH_MANAGE))
+  .post(userValidation.coachAccountValidation, coachCtrl.createCoachAccount)
+  .put(userValidation.updateCoachValidation, checkAssociatedUser('body', 'coachId', GYM_COACH), coachCtrl.updateCoach)
+  .get(userValidation.fetchCoachesValidation, coachCtrl.fetchCoaches);
+// router.put("/coach/password/reset", checkPermssion(COACH_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
+router.delete("/coach/:id", checkPermssion(COACH_MANAGE), checkAssociatedUser('params', 'id', GYM_COACH), coachCtrl.deleteCoach);
+
+// router.route("/template/bulk/:id").get(templateCtrl.savePredefiendTemplates)
 
 module.exports = router;

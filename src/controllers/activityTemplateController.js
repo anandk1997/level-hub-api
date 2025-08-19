@@ -20,7 +20,8 @@ const { Op } = db.Sequelize;
  */
 const saveActivityTemplate  = async (req, res, next) => {
   try {
-    const userId = parseInt(req.userId);
+    const userId = parseInt(req.userId), userInfo = req.user;
+    const ownerId = userInfo?.ownerId || userInfo?.userId;
     const {
       templateId,
       title,
@@ -35,7 +36,7 @@ const saveActivityTemplate  = async (req, res, next) => {
       description,
       videoLink,
       xp,
-      userId,
+      userId: ownerId,
     }, {
       conflictFields: ["id"]
     });
@@ -126,10 +127,67 @@ const deleteActivityTemplate = async (req, res, next) => {
 };
 
 
+/**
+ * Save predefined templates
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const savePredefiendTemplates = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const templates = [{
+      title: 'Chest Workout',
+      description: "1. Chest press\n2. Inclined press\n3. Dumbbell press",
+      videoLink: "https://youtu.be/8v2NjGywwxI",
+      xp: 50,
+      userId
+    }, {
+      title: 'Back Workout',
+      description: "1. Lat pulldown\n2. Reverse grip pulldown\n3. Rowing",
+      videoLink: "https://youtu.be/FPcp5XUJr-0",
+      xp: 50,
+      userId
+    }, {
+      title: 'Bicep Workout',
+      description: "1. Arm curl\n2. Hammer curl\n3. Barbell curl",
+      videoLink: "https://vimeo.com/347119375",
+      xp: 50,
+      userId
+    }, {
+      title: 'Tricep Workout',
+      description: "1. Tricep dips\n2. Bumbbell overhead extensions\n3. Diamond pushups",
+      videoLink: "https://vimeo.com/252443587",
+      xp: 50,
+      userId
+    }, {
+      title: 'Shoulder Workout',
+      description: "1. Dumbbell shoulder press\n2. Barbell shoulder\n3. Lateral raises",
+      videoLink: "https://www.youtube.com/watch?v=FPcp5XUJr-0",
+      xp: 50,
+      userId
+    }, {
+      title: 'Legs Workout',
+      description: "1. Back squat\n2. Lunges\n3. Leg press\n4. Leg extension",
+      videoLink: "https://www.youtube.com/watch?v=FPcp5XUJr-0",
+      xp: 50,
+      userId
+    }];
+    // return res.json({ userId, templates });
+    
+    const result = await db.ActivityTemplates.bulkCreate(templates);
+    return res.response(ACTIVITY_TEMPLATE_CREATED_SUCCESS, result);
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
 
 module.exports = {
   saveActivityTemplate,
   fetchActivityTemplates,
   fetchActivityTemplateDetails,
   deleteActivityTemplate,
+  savePredefiendTemplates,
 }

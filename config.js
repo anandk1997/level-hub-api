@@ -8,6 +8,7 @@ module.exports = {
 	DB_HOST: process.env.DB_HOST,
 	DB_PORT: process.env.DB_PORT || 5432,
 	SECRET: process.env.SECRET,
+	ADMIN_SECRET: process.env.ADMIN_SECRET,
 	COMMON_ERR_MSG: 'Something went wrong. Please try again later.',
 	SALT_ROUNDS: 10,
 	EMAIL_VERIFICATION_OTP: 'email_verification',

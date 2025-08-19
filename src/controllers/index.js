@@ -7,6 +7,7 @@ const templateCtrl = require('./activityTemplateController');
 const userCtrl = require('./userController');
 const childCtrl = require('./childController');
 const inviteCtrl = require('./inviteController');
+const coachCtrl = require('./coachController');
 
 module.exports = {
   authCtrl,
@@ -18,4 +19,5 @@ module.exports = {
   userCtrl,
   childCtrl,
   inviteCtrl,
+  coachCtrl,
 };

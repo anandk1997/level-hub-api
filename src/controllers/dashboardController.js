@@ -8,6 +8,9 @@ const {
   DASH_ALL_STATS_FETCH_SUCCESS,
   DASH_TODAY_STATS_FETCH_SUCCESS,
   DASH_LEADERBOARD_FETCH_SUCCESS,
+  DASH_USERS_FETCH_SUCCESS,
+  DASH_INVITES_FETCH_SUCCESS,
+  DASH_XP_FETCH_SUCCESS,
 } = require('../messages');
 const { userHelper } = require('../helpers');
 const {
@@ -16,9 +19,12 @@ const {
     PARENT_OWNER,
     INDIVIDUAL,
     INDIVIDUAL_OWNER,
-    CHILD
+    CHILD,
+    COACH_HEAD,
+    COACH,
   }
-} = require('../constants')
+} = require('../constants');
+const { calculateLevel } = require('../utils');
 
 const { Op, fn, col, where, literal, QueryTypes } = db.Sequelize;
 
@@ -177,36 +183,152 @@ const fetchTodaysActivities = async (req, res, next) => {
  */
 const fetchLeaderboard = async (req, res, next) => {
   try {
-    const userId = req.userId, userInfo = req.user;
+    const userId = req.userId, userInfo = req.user, role = req.query.role;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+    const whereRoleName = role !== "ALL" ? [role] : [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ];
+
     const target = await userHelper.fetchUserTarget(userId);
 
-    const leaderboard = await db.Users.findAll({
+    const users = await db.Users.findAll({
       attributes: ['id', 'firstName', 'lastName', 'fullName', 'email', 'username'],
       where: {
         [Op.or]: {
           id: userId,
-          ownerId: userId,
-        }
+          ownerId,
+        },
+        isActive: true
       },
       include: [
         {
           model: db.UserProgress,
-          attributes: ['currentXP']
+          attributes: ['id', 'currentXP']
         },
         {
-          attributes: ['id', 'name'],
+          attributes: ['name'],
           model: db.Roles,
           where: {
-            name: [ PARENT, PARENT_OWNER, INDIVIDUAL, INDIVIDUAL_OWNER, CHILD ]
+            name: { [Op.iLike] : { [Op.any]: whereRoleName } }
           }
         }
       ],
       limit: 10,
       offset: 0,
-      order: [[{ model: db.UserProgress },'currentXP', 'DESC']],
+      order: [[{ model: db.UserProgress }, 'currentXP', 'DESC']],
       subQuery: false
     });
+    const leaderboard = users.map(user => {
+			const userInfo = {
+				...user.dataValues,
+				targetXP: target?.targetXP,
+        currentXP: user?.UserProgress?.currentXP,
+	      level: calculateLevel(target?.targetXP, user?.UserProgress?.currentXP)
+			};
+			delete userInfo.UserProgress;
+			return userInfo;
+		});
     return res.response(DASH_LEADERBOARD_FETCH_SUCCESS, { leaderboard });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch all active users under an owner
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchActiveUsers = async (req, res, next) => {
+  try {
+		const ownerId = req.user?.ownerId || req.user?.userId, { type = 'all', role  } = req.query;
+    let where = {
+      ownerId,
+      isActive: true,
+    };
+    let include = undefined;
+    if (role === 'coaches') {
+      include = {
+        attributes: ['name'],
+        model: db.Roles,
+        where: {
+          name: [COACH_HEAD, COACH]
+        }
+      };
+    } else if (role?.toLowerCase() !== 'all') {
+      include = {
+        attributes: ['name'],
+        model: db.Roles,
+        where: {
+          name: { [Op.notIn]: [COACH_HEAD, COACH] }
+        }
+      };
+    }
+    if (type === 'monthly') {
+      const startDate = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+      const endDate = dayjs().endOf('month').format('YYYY-MM-DD HH:mm:ss');
+      where = {
+        ...where,
+        [Op.and]: literal(`DATE("Users"."createdAt") BETWEEN '${startDate}' AND '${endDate}'`)
+      }
+    }
+    const count = await db.Users.count({ where, include });
+    return res.response(DASH_USERS_FETCH_SUCCESS, { count });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch count of pending invites
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchPendingInvites = async (req, res, next) => {
+  try {
+		const userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+    const inviteCount = await db.Invites.count({
+			where: {
+        ownerId,
+        status: 'pending',
+        expiryDate: { [Op.gte]: dayjs().toDate() }
+      },
+		});
+    return res.response(DASH_INVITES_FETCH_SUCCESS, { count: inviteCount });
+  } catch (error) {
+    return next({ error, statusCode: 500, message: error?.message });
+  }
+};
+
+/**
+ * Fetch all cumlative XP
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+const fetchCumulativeXP = async (req, res, next) => {
+  try {
+		const userInfo = req.user;
+		const ownerId = userInfo.ownerId || userInfo.userId;
+
+    const historyResult = await db.ActivityHistory.findOne({
+      attributes: [[fn('SUM', col('xp')), 'totalXP']],
+      include: {
+        model: db.Users,
+        as: 'historyAssignee',
+        where: { ownerId, isActive: true },
+        attributes: [],
+        required: true
+      },
+      group: ['xp'],
+      subQuery: false
+    });
+    return res.response(DASH_XP_FETCH_SUCCESS, { totalXP: historyResult?.dataValues?.totalXP || 0 });
   } catch (error) {
     return next({ error, statusCode: 500, message: error?.message });
   }
@@ -217,4 +339,7 @@ module.exports = {
   fetchAllTimeActivities,
   fetchTodaysActivities,
   fetchLeaderboard,
+  fetchActiveUsers,
+  fetchPendingInvites,
+  fetchCumulativeXP,
 }

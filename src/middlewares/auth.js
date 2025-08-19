@@ -1,7 +1,7 @@
 'use strict';
 
 const { verify, sign } = require('jsonwebtoken');
-const { SECRET } = require('../../config');
+const { SECRET, ADMIN_SECRET } = require('../../config');
 const {
 	INVALID_TOKEN,
 	INVALID_TOKEN_EXCEPTION,
@@ -35,7 +35,7 @@ const checkToken = (req, res, next) => {
 					req.accessToken = token;
 					req.userId = parseInt(decoded.id);
 					req.user = {
-						userId: decoded.id,
+						userId: parseInt(decoded.id),
 						email: decoded.email,
 						username: decoded.username,
 						role: decoded.role,
@@ -55,11 +55,14 @@ const checkToken = (req, res, next) => {
  * @async
  * @param {Object} userData
  * @param {string?} tokenTime
+ * @param {Boolean?} isSuperAdmin
  */
-const authorize = async(userData, tokenTime) => {
+const authorize = async(userData, tokenTime, isSuperAdmin) => {
 	tokenTime = tokenTime || '6h';
+	const secret = isSuperAdmin ? ADMIN_SECRET : SECRET;
+
 	let token = await sign(userData,
-		SECRET, { expiresIn: tokenTime } // expires in 1 hour ( 180000 )
+		secret, { expiresIn: tokenTime } // expires in 1 hour ( 180000 )
 	);
 	return token;
 };

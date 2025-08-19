@@ -26,7 +26,7 @@ const {
 } = require('../messages');
 
 const { checkIfUserExists } = userHelper;
-const { Op } = db.Sequelize;
+const { Op, literal, where } = db.Sequelize;
 
 /**
  * Send invite to the users via email
@@ -51,6 +51,8 @@ const sendInvite = async (req, res, next) => {
 		const inviteExists = await checkIfInviteExists(email, ownerId);
     if (inviteExists) { return res.response(INVITE_EXISTS, {}, 409, INVITE_EXISTS_EXCEPTION, false); }
 
+		// TODO: Check if owner have exceeded users limit as per subscribed plan
+
 		const token = randomBytes(32).toString('hex');
 		const params = btoa(JSON.stringify({
 			token,
@@ -73,6 +75,8 @@ const sendInvite = async (req, res, next) => {
 			token,
 			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
 		});
+		// TODO: Show if less user capacity is remaining
+
 		await mailHelper.sendInviteEmail(mailData);
     return res.response(INVITE_SENT_SUCCESS, {}, 201);
   } catch (error) {
@@ -106,6 +110,38 @@ const checkIfInviteExists = async (email, ownerId, returnResult = false) => {
 };
 
 /**
+ * Generates filter, sorting, and search criteria for querying invite listing
+ *
+ * @param {string} sortBy
+ * @param {string} sort
+ * @param {string?} search
+ * @returns {Promise<{ likeSearch: object, order: Array, roleWhere: object }>}
+ */
+const setInviteFilter = async (sortBy, sort, search) => {
+	search = search ? search.trim().toLowerCase() : '';
+
+	const orderBy = (sortBy === 'fullName') ? [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)] : [sortBy];
+	const order = [...orderBy, sort];
+
+	const searchColumns = ['email', 'role'];
+	let likeSearch = {};
+	if (search) {
+		const likeColumns = searchColumns.map(column => {
+			return { [column]: { [Op.iLike]: '%' + search + '%' } };
+		});
+		const fullNameSearch = where(
+			literal(`"firstName" || CASE WHEN "lastName" IS NOT NULL THEN ' ' || "lastName" ELSE '' END`),
+			{ [Op.iLike]: '%' + search + '%' }
+		);
+		likeSearch = { [Op.or]: [...likeColumns, fullNameSearch] };
+	}
+	return {
+		likeSearch,
+		order,
+	}
+};
+
+/**
  * Fetch all active invites sent by an organization
  * 
  * @param {import('express').Request} req
@@ -115,28 +151,36 @@ const checkIfInviteExists = async (email, ownerId, returnResult = false) => {
 const fetchInvites = async (req, res, next) => {
 	try {
 		const userInfo = req.user;
-		let { page, pageSize } = req.query;
+		let { page, pageSize, search = '', sortBy = 'fullName', sort = 'ASC', role = "ALL" } = req.query;
 		page = page ? parseInt(page) : 1;
 		pageSize = pageSize ? parseInt(pageSize) : 10;
     const pageOffset = pageSize * (page - 1);
 		const ownerId = userInfo.ownerId || userInfo.userId;
 
+		const { likeSearch, order } = await setInviteFilter(sortBy, sort, search);
+		const where = {
+			ownerId,
+			...likeSearch
+		}
+		if (role.toLowerCase() !== 'all') {
+			where.role = role;
+		}
+
 		const { count, rows } = await db.Invites.findAndCountAll({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'status', 'expiryDate'],
-			where: {
-				ownerId
-			},
+			where,
 			limit: pageSize,
       offset: pageOffset,
-			order: [['createdAt', 'DESC']]
+			order: [order],
+			subQuery: false
 		});
 		const invites = rows.map(row => ({
 			...row.dataValues,
-			status: dayjs(row.expiryDate).isBefore(dayjs()) ? 'expired' : row.status
+			status: row.status === 'pending' && dayjs(row.expiryDate).isBefore(dayjs()) ? 'expired' : row.status
 		}))
     return res.response(INVITES_FETCH_SUCCESS, { count, invites });
 	} catch (error) {
-		throw error;
+    return next({ error, statusCode: 500, message: error?.message });
 	}
 };
 
@@ -152,17 +196,23 @@ const fetchInviteDetails = async (req, res, next) => {
     const inviteId = parseInt(req.params.id), userInfo = req.user;
 		const ownerId = userInfo.ownerId || userInfo.userId;
     const invite = await db.Invites.findOne({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'sentById', 'status', 'expiryDate'],
+			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'sentById', 'status', 'userId', 'expiryDate'],
 			where: { id: inviteId, ownerId },
-			include: {
+			include: [{
 				model: db.Users,
 				as: 'sentByUser',
-				required: true,
+				required: false,
 				attributes: ['id', 'fullName', 'firstName', 'lastName'],
-			}
+			}, {
+				model: db.Users,
+				as: "createdUser",
+				required: false,
+				attributes: ['id',  'fullName', 'firstName', 'lastName', 'isActive']
+			}],
+			subQuery: false
 		});
 		if (invite?.expiryDate) {
-			invite.status = invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
+			invite.status = invite.status === 'pending' && invite?.expiryDate && dayjs(invite.expiryDate).isBefore(dayjs()) ? 'expired' : invite?.status;
 		}
     return res.response(INVITE_FETCH_SUCCESS, { invite });
   } catch (error) {
@@ -204,7 +254,7 @@ const verifyInvite = async (req, res, next) => {
 
     const invite = await db.Invites.findOne({
 			attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'ownerId', 'token', 'sentById', 'status', 'expiryDate'],
-			where: { token, email },
+			where: { token, email, status: ['pending'] },
 			include: [{
 				model: db.Users,
 				as: 'sentByUser',
@@ -217,7 +267,7 @@ const verifyInvite = async (req, res, next) => {
 				attributes: ['id', 'fullName', 'firstName', 'lastName'],
 			}]
 		});
-    if (!invite) { return res.response(INVITE_INVALID, {}, 404, INVITE_INVALID_EXCEPTION, false); }
+    if (!invite) { return res.response(INVITE_INVALID, {}, 410, INVITE_INVALID_EXCEPTION, false); }
 
 		if (dayjs(invite.expiryDate).isBefore(dayjs())) {
 			return res.response(INVITE_EXPIRED, {}, 404, INVITE_EXPIRED_EXCEPTION, false);
@@ -254,19 +304,21 @@ const resendInvite = async (req, res, next) => {
 				}
 			}
 		});
-    if (!invite) { return res.response(INVITE_INVALID, {}, 404, INVITE_INVALID_EXCEPTION, false); }
+    if (!invite) { return res.response(INVITE_INVALID, {}, 400, INVITE_INVALID_EXCEPTION, false); }
+		const token = dayjs(invite.expiryDate).isBefore(dayjs()) ? randomBytes(32).toString('hex') : invite.token;
+
+		const updated = await invite.update({
+			status: 'pending',
+			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate(),
+			token
+		});
 
 		const mailData = {
-			params: btoa(JSON.stringify({ token: invite.token, email: invite.email })),
+			params: btoa(JSON.stringify({ token, email: invite.email })),
 			fullName: (`${invite.firstName} ${invite.lastName ? invite.lastName : ''}`).trim(),
 			ownerName: userInfo.fullName,
 			email: invite.email,
 		};
-
-		const updated = await invite.update({
-			status: 'pending',
-			expiryDate: dayjs().add(INVITE_VALIDITY, 'days').toDate()
-		});
 		await mailHelper.sendInviteEmail(mailData);
 
     return res.response(INVITE_SENT_SUCCESS, updated);

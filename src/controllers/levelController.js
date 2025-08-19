@@ -9,7 +9,7 @@ const {
   LEVEL_NOT_SET_EXCEPTION
 } = require('../messages.js');
 
-const { fetchPrimaryUser, fetchOwner } = userHelper;
+const { fetchOwner } = userHelper;
 
 /**
  * Create/update the level XP for the user

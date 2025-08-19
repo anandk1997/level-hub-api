@@ -7,6 +7,12 @@ const {
   FORBIDDEN,
   FORBIDDEN_EXCEPTION,
 } = require('../messages');
+const {
+  ROLES: {
+    COACH_HEAD,
+    COACH
+  }
+} = require('../constants');
 
 
 /**
@@ -76,8 +82,9 @@ const checkPermssion = (permissionKey) => {
  *
  * @param {string?} type
  * @param {string?} key
+ * @param {string?} relation
  */
-const checkAssociatedUser = (type = 'query', key = 'userId') => {
+const checkAssociatedUser = (type = 'query', key = 'userId', relation = null) => {
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -85,12 +92,14 @@ const checkAssociatedUser = (type = 'query', key = 'userId') => {
    */
   return async (req, res, next) => {
     try {
+      const allowedRoles = [COACH, COACH_HEAD];
       const primaryUserId = parseInt(req.userId), userInfo = req.user;
+      const ownerId = userInfo.ownerId || primaryUserId;
       let associatedUserId = req[type][key] ? parseInt(req[type][key]) : req[type][key];
-      if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
-      if (!userInfo?.isPrimaryAccount) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       associatedUserId = parseInt(associatedUserId);
-      const isAssociated = await checkIfUserAssociated(primaryUserId, associatedUserId);
+      if (!associatedUserId || primaryUserId === associatedUserId) { return next(); }
+      if (!userInfo?.isPrimaryAccount && !allowedRoles.includes(userInfo.role)) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
+      const isAssociated = await checkIfUserAssociated(ownerId, associatedUserId, relation);
       if (!isAssociated) { return res.response(FORBIDDEN, {}, 403, FORBIDDEN_EXCEPTION, false); }
       next();
     } catch (error) {
