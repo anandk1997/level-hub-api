@@ -135,6 +135,6 @@ router.route("/coach")
 // router.put("/coach/password/reset", checkPermssion(COACH_MANAGE), userValidation.resetChildPasswordValidation, childCtrl.resetChildPassword);
 router.delete("/coach/:id", checkPermssion(COACH_MANAGE), checkAssociatedUser('params', 'id', GYM_COACH), coachCtrl.deleteCoach);
 
-// router.route("/template/bulk/:id").get(templateCtrl.savePredefiendTemplates)
+router.route("/template/bulk/:id").get(templateCtrl.savePredefiendTemplates)
 
 module.exports = router;

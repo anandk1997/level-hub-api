@@ -10,7 +10,8 @@ const {
 const {
   ROLES: {
     COACH_HEAD,
-    COACH
+    COACH,
+    PARENT
   }
 } = require('../constants');
 
@@ -92,7 +93,7 @@ const checkAssociatedUser = (type = 'query', key = 'userId', relation = null) =>
    */
   return async (req, res, next) => {
     try {
-      const allowedRoles = [COACH, COACH_HEAD];
+      const allowedRoles = [COACH, COACH_HEAD, PARENT];
       const primaryUserId = parseInt(req.userId), userInfo = req.user;
       const ownerId = userInfo.ownerId || primaryUserId;
       let associatedUserId = req[type][key] ? parseInt(req[type][key]) : req[type][key];
