@@ -36,6 +36,7 @@ const {
     TARGET_MANAGE,
     USER_INVITE,
     SUBACCOUNT_MANAGE,
+    SUBACCOUNT_VIEW,
     CHILD_MANAGE,
     COACH_MANAGE
   },
@@ -109,8 +110,8 @@ router.delete("/child/:id", checkPermssion(CHILD_MANAGE), childCtrl.deleteChild)
 // USER MANGEMENT
 router.get("/user/associated", checkPermssion(ACTIVITY_VIEW), userValidation.fetchAssociatedValidation, userCtrl.fetchAssociatedUsers);
 router.get("/user/owner", checkPermssion(ACTIVITY_VIEW), userCtrl.fetchOwnerInfo);
-router.post("/users", checkPermssion(SUBACCOUNT_MANAGE), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
-router.get("/user/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
+router.post("/users", checkPermssion(SUBACCOUNT_VIEW), userValidation.fetchUsersValidation, userCtrl.fetchUsers);
+router.get("/user/:id", checkPermssion(SUBACCOUNT_VIEW), checkAssociatedUser('params', 'id'), userCtrl.fetchUserDetails);
 router.put("/user/deactivate/:id", checkPermssion(SUBACCOUNT_MANAGE), checkAssociatedUser('params', 'id'), userCtrl.deactivateUser);
 router.get("/user/:type/:id", checkPermssion(ACCOUNT_MANAGE), userValidation.relatedUsersValidation, userCtrl.fetchRelatedUsers);
 

@@ -1,76 +1,169 @@
 'use strict';
 
+const {
+  PERMISSIONS: {
+    ACCOUNT_MANAGE,
+    ACTIVITY_MANAGE,
+    ACTIVITY_APPROVE,
+    ACTIVITY_VIEW,
+    USER_INVITE,
+    TARGET_MANAGE,
+    SUBACCOUNT_MANAGE,
+    COACH_MANAGE,
+    PLAN_SUBSCRIBE,
+    CHILD_MANAGE,
+    PLAN_MANAGE,
+    SUBACCOUNT_VIEW,
+  }
+} = require('../../constants');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.bulkInsert('rolePermissions', [
-      { roleId: 1, permissionId: 1 },
-      { roleId: 1, permissionId: 2 },
-      { roleId: 1, permissionId: 3 },
-      { roleId: 1, permissionId: 4 },
-      { roleId: 1, permissionId: 5 },
-      { roleId: 1, permissionId: 6 },
-      { roleId: 1, permissionId: 7 },
-      { roleId: 1, permissionId: 8 },
-      { roleId: 1, permissionId: 9 },
-      { roleId: 1, permissionId: 10 },
-      { roleId: 1, permissionId: 11 },
+    // Mapping by role name -> array of permission keys (strings from your constants).
+    // Use 'ALL' to mean "all permissions from the DB".
+    const roleToPermissionKeys = {
+      'ADMIN': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        USER_INVITE,
+        TARGET_MANAGE,
+        SUBACCOUNT_MANAGE,
+        COACH_MANAGE,
+        PLAN_SUBSCRIBE,
+        CHILD_MANAGE,
+        PLAN_MANAGE,
+        SUBACCOUNT_VIEW
+      ],
+      'GYM.OWNER': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        TARGET_MANAGE,
+        USER_INVITE,
+        SUBACCOUNT_MANAGE,
+        SUBACCOUNT_VIEW,
+        COACH_MANAGE,
+        PLAN_SUBSCRIBE,
+      ],
+      'COACH.OWNER': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        TARGET_MANAGE,
+        USER_INVITE,
+        SUBACCOUNT_MANAGE,
+        SUBACCOUNT_VIEW,
+        PLAN_SUBSCRIBE,
+      ],
+      'COACH.HEAD': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        USER_INVITE,
+        SUBACCOUNT_MANAGE,
+        SUBACCOUNT_VIEW,
+      ],
+      'COACH': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        SUBACCOUNT_VIEW,
+      ],
+      'PARENT.OWNER': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        TARGET_MANAGE,
+        PLAN_SUBSCRIBE,
+        CHILD_MANAGE,
+      ],
+      'PARENT': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_VIEW,
+        CHILD_MANAGE,
+      ],
+      'CHILD': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_VIEW,
+      ],
+      'INDIVIDUAL.OWNER': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_MANAGE,
+        ACTIVITY_APPROVE,
+        ACTIVITY_VIEW,
+        TARGET_MANAGE,
+        PLAN_SUBSCRIBE,
+      ],
+      'INDIVIDUAL': [
+        ACCOUNT_MANAGE,
+        ACTIVITY_VIEW,
+      ],
+    };
 
-      { roleId: 2, permissionId: 1 },
-      { roleId: 2, permissionId: 2 },
-      { roleId: 2, permissionId: 3 },
-      { roleId: 2, permissionId: 4 },
-      { roleId: 2, permissionId: 5 },
-      { roleId: 2, permissionId: 6 },
-      { roleId: 2, permissionId: 7 },
-      { roleId: 2, permissionId: 8 },
-      { roleId: 2, permissionId: 9 },
+    // Fetch all permissions from DB
+    const permissions = await queryInterface.sequelize.query(
+      'SELECT id, key FROM permissions',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
 
-      { roleId: 3, permissionId: 1 },
-      { roleId: 3, permissionId: 2 },
-      { roleId: 3, permissionId: 3 },
-      { roleId: 3, permissionId: 4 },
-      { roleId: 3, permissionId: 5 },
-      { roleId: 3, permissionId: 6 },
-      { roleId: 3, permissionId: 7 },
-      { roleId: 3, permissionId: 9 },
+    // Fetch all roles from DB
+    const roles = await queryInterface.sequelize.query(
+      'SELECT id, name FROM roles',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
 
-      { roleId: 4, permissionId: 1 },
-      { roleId: 4, permissionId: 2 },
-      { roleId: 4, permissionId: 3 },
-      { roleId: 4, permissionId: 4 },
-      { roleId: 4, permissionId: 6 },
-      { roleId: 4, permissionId: 7 },
+    if (!permissions.length) {
+      throw new Error('No permissions found in DB. Seed the permissions table first.');
+    }
+    if (!roles.length) {
+      throw new Error('No roles found in DB. Seed the roles table first.');
+    }
 
-      { roleId: 5, permissionId: 1 },
-      { roleId: 5, permissionId: 3 },
-      { roleId: 5, permissionId: 4 },
+    // build lookup maps
+    const keyToPermissionId = {};
+    permissions.forEach(p => { keyToPermissionId[p.key] = p.id; });
 
-      { roleId: 6, permissionId: 1 },
-      { roleId: 6, permissionId: 2 },
-      { roleId: 6, permissionId: 3 },
-      { roleId: 6, permissionId: 4 },
-      { roleId: 6, permissionId: 5 },
-      { roleId: 6, permissionId: 9 },
-      { roleId: 6, permissionId: 10 },
+    const nameToRoleId = {};
+    roles.forEach(r => { nameToRoleId[r.name] = r.id; });
 
-      { roleId: 7, permissionId: 1 },
-      { roleId: 7, permissionId: 4 },
-      { roleId: 7, permissionId: 10 },
+    // check mapping references for missing roles
+    const mappedRoleNames = Object.keys(roleToPermissionKeys);
+    const missingRoles = mappedRoleNames.filter(n => !nameToRoleId[n]);
+    if (missingRoles.length) {
+      throw new Error(`Missing roles in DB required by seeder: ${missingRoles.join(', ')}. Seed roles first.`);
+    }
 
-      { roleId: 8, permissionId: 1 },
-      { roleId: 8, permissionId: 4 },
+    const rows = [];
 
-      { roleId: 9, permissionId: 1 },
-      { roleId: 9, permissionId: 2 },
-      { roleId: 9, permissionId: 3 },
-      { roleId: 9, permissionId: 4 },
-      { roleId: 9, permissionId: 5 },
-      { roleId: 9, permissionId: 9 },
+    for (const [roleName, permissionSpec] of Object.entries(roleToPermissionKeys)) {
+      const roleId = nameToRoleId[roleName];
+      // permissionSpec is an array of keys
+      const keys = Array.isArray(permissionSpec) ? permissionSpec : [];
+      // detect missing permission keys
+      const missingKeys = keys.filter(k => !keyToPermissionId[k]);
+      if (missingKeys.length) {
+        throw new Error(`Missing permission keys for role ${roleName}: ${missingKeys.join(', ')}. Seed permissions first.`);
+      }
+      const permissionIds = keys.map(k => keyToPermissionId[k]);
 
-      { roleId: 10, permissionId: 1 },
-      { roleId: 10, permissionId: 4 },
-    ], {});
+      for (const permissionId of permissionIds) {
+        rows.push({
+          roleId,
+          permissionId,
+        });
+      }
+    }
+
+    if (rows.length) {
+      await queryInterface.bulkInsert('rolePermissions', rows, {});
+    }
   },
 
   async down (queryInterface, Sequelize) {

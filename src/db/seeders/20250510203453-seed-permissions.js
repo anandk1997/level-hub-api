@@ -12,7 +12,8 @@ const {
     COACH_MANAGE,
     PLAN_SUBSCRIBE,
     CHILD_MANAGE,
-    PLAN_MANAGE
+    PLAN_MANAGE,
+    SUBACCOUNT_VIEW,
   }
 } = require("../../constants");
 
@@ -27,6 +28,7 @@ module.exports = {
       { key: TARGET_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
       { key: USER_INVITE, createdAt: new Date(), updatedAt: new Date(), },
       { key: SUBACCOUNT_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
+      { key: SUBACCOUNT_VIEW, createdAt: new Date(), updatedAt: new Date(), },
       { key: COACH_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
       { key: PLAN_SUBSCRIBE, createdAt: new Date(), updatedAt: new Date(), },
       { key: CHILD_MANAGE, createdAt: new Date(), updatedAt: new Date(), },
