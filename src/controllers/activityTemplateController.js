@@ -137,7 +137,7 @@ const deleteActivityTemplate = async (req, res, next) => {
 const savePredefiendTemplates = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
-    const templates = [{
+    const gymTemplates = [{
       title: 'Chest Workout',
       description: "1. Chest press\n2. Inclined press\n3. Dumbbell press",
       videoLink: "https://youtu.be/8v2NjGywwxI",
@@ -174,6 +174,114 @@ const savePredefiendTemplates = async (req, res, next) => {
       xp: 50,
       userId
     }];
+
+    const templates = [
+      {
+        title: 'Mini Ninjas | Wall',
+        description: 'Climb the wall to build upper body strength and confidence.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Mini Ninjas | Long Rings',
+        description: 'Hang from the long rings to improve grip strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Mini Ninjas | Jumping',
+        description: 'Jump over obstacles to improve agility and coordination.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Mini Ninjas | Balance',
+        description: 'Balance on a beam to improve balance and stability.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Mini Ninjas | Hanging',
+        description: 'Hang from the bar to improve grip strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Youth | Wall',
+        description: 'Climb the wall to build upper body strength and confidence.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Youth | Pull-ups',
+        description: 'Perform pull-ups to build upper body strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Youth | Push-ups',
+        description: 'Perform push-ups to build chest and tricep strength.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Youth | Hanging',
+        description: 'Hang from the bar to improve grip strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Youth | Balance',
+        description: 'Balance on a beam to improve balance and stability.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Teen/Adults | Burpees',
+        description: 'Perform a burpee to improve cardiovascular endurance and strength.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Teen/Adults | Mountain Climbers',
+        description: 'Perform mountain climbers to improve cardiovascular endurance and agility.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Teen/Adults | Box Jumps',
+        description: 'Perform box jumps to improve power and explosiveness.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Teen/Adults | Pull-ups',
+        description: 'Perform pull-ups to build upper body strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      },
+      {
+        title: 'Teen/Adults | Dips',
+        description: 'Perform dips to build tricep strength and endurance.',
+        xp: 200,
+        videoLink: "https://youtu.be/8v2NjGywwxI",
+        userId,
+      }
+    ];
     // return res.json({ userId, templates });
     
     const result = await db.ActivityTemplates.bulkCreate(templates);

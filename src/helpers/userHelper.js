@@ -228,7 +228,7 @@ const fetchUserTarget = async (userId, attributes = ['id', 'targetXP']) => {
  * @param {string} relationType
  * @returns {number}
  */
-const fetchParent = async (userId, relationType) => {
+const fetchParent = async (userId, relationType = PARENT_CHILD) => {
 	try {
 		const user = await db.Users.findOne({
 			attributes: ['id', 'fullName', 'firstName', 'lastName', 'email', 'username', 'isActive', 'ownerId'],

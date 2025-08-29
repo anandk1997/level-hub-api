@@ -3,7 +3,7 @@
 const dayjs = require('dayjs');
 
 const { db } = require('../db');
-const { userHelper, Mailer, mailHelper } = require('../helpers');
+const { userHelper, mailHelper } = require('../helpers');
 const {
   ACTIVITY_CREATED_SUCCESS,
   ACTIVITY_UPDATED_SUCCESS,
@@ -19,6 +19,11 @@ const {
   ACTIVITY_DELETED_SUCCESS,
   ACTIVITY_DELETED_FAILURE,
 } = require('../messages');
+const {
+	ROLES: {
+    CHILD
+  }
+} = require('../constants');
 
 const { Op, fn, col, where, literal } = db.Sequelize;
 
@@ -220,13 +225,13 @@ const evaluateLevelChange = async  (currentXP, totalXP, userInfo, mailUserInfo, 
     if (currentLevel > previousLevel && userInfo?.email) {
       const mailData = {
         fullName: mailUserInfo?.fullName || userInfo?.fullName,
-        parentFullName: userInfo?.fullName,
-        email: userInfo?.email,
+        parentFullName: mailUserInfo?.sendToParent ? mailUserInfo?.parentFullName : userInfo?.fullName,
+        email: mailUserInfo?.email || userInfo?.email,
         currentLevel,
         currentXP,
         targetXP: target?.targetXP,
       };
-      if (mailUserInfo?.fullName) {
+      if (mailUserInfo?.sendToParent) {
         await mailHelper.sendLevelUpEmailToParent(mailData);
       } else {
         await mailHelper.sendLevelUpEmail(mailData);
@@ -271,8 +276,23 @@ const approveActivity = async (req, res, next) => {
         attributes: ['id', 'email', 'fullName', 'firstName', 'lastName'],
         where: {
           id: assigneeId
+        },
+        include: {
+          model: db.Roles,
+          attributes: ['name'],
+          required: true,
         }
       });
+      if (mailUserInfo?.Role?.name === CHILD) {
+        const parentInfo = await userHelper.fetchParent(assigneeId);
+        mailUserInfo = {
+          ...mailUserInfo.dataValues,
+          fullName: mailUserInfo.fullName,
+          email: parentInfo?.email,
+          parentFullName: parentInfo?.fullName,
+          sendToParent: true,
+        }
+      }
     }
     
     // Check if activity is already approved on CURRENT DATE
