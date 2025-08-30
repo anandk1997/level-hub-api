@@ -191,6 +191,8 @@ const setUsersFilter = async (role, sortBy, sort, search) => {
 		orderBy = [literal(`"firstName" || ' ' || COALESCE("lastName", '')`)];
 	} else if (sortBy === 'role') {
 		orderBy = [db.Roles, 'name']
+	} else if (sortBy === 'currentXP') {
+		orderBy = [db.UserProgress, 'currentXP']
 	} else {
 		orderBy = [sortBy];
 	}

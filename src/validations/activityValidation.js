@@ -50,9 +50,9 @@ const saveActivityValidation = async (req, res, next) => {
       'date.min': ACT_START_DATE_MIN_VALIDATION,
       'date.max': ACT_START_DATE_MAX_VALIDATION
     }),
-    endDate: joiExtended.date().format('YYYY-MM-DD').raw().min(Joi.ref('startDate')).max(maxEndDate).when('isRecurring', {
+    endDate: joiExtended.date().format('YYYY-MM-DD').raw().when('isRecurring', {
       is: true,
-      then: Joi.required(),
+      then: joiExtended.date().format('YYYY-MM-DD').raw().min(Joi.ref('startDate')).max(maxEndDate).required(),
       otherwise: Joi.optional()
     }).messages({
       'date.min': ACT_END_DATE_MIN_VALIDATION,

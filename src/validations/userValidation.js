@@ -183,7 +183,7 @@ const fetchUsersValidation = async (req, res, next) => {
     role: Joi.string().valid(PARENT, CHILD, INDIVIDUAL, "ALL").optional(),
     search: Joi.string().max(255).optional().allow(""),
     sort: Joi.string().valid("ASC", "DESC").optional(),
-    sortBy: Joi.string().valid("fullName", "email", 'role').optional(),
+    sortBy: Joi.string().valid("fullName", "email", 'role', 'currentXP').optional(),
     page: Joi.number().integer().strict().min(1).optional(),
     pageSize: Joi.number().integer().strict().min(1).max(100).optional(),
     // assigneeId: Joi.number().integer().positive().optional(),
