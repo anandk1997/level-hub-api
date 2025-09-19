@@ -19,6 +19,7 @@ const checkToken = (req, res, next) => {
 	req.header_sub_domain = (req.headers['x-sub-domain'] !== undefined) ? req.headers['x-sub-domain'] : '';
 	
 	const splitUrl = req.originalUrl.split('/');
+	const secret = splitUrl.includes('admin') ? ADMIN_SECRET : SECRET;
 
 	if (req.method === 'OPTIONS') {
 		next();
@@ -28,7 +29,7 @@ const checkToken = (req, res, next) => {
 			if (token.startsWith('Bearer ')) {
 				token = token.slice(7, token.length); // Remove Bearer from string
 			}
-			verify(token, SECRET, (err, decoded) => {
+			verify(token, secret, (err, decoded) => {
 				if (err) {
 					return res.response(INVALID_TOKEN, {}, 401, INVALID_TOKEN_EXCEPTION, false);
 				} else {

@@ -14,40 +14,26 @@ const {
   DB_PORT,
 } = require("../../../config");
 
-/**
- * @typedef {import('sequelize').Model} Targets
- * @typedef {import('sequelize').Model} UserProgress
- * @typedef {import('sequelize').Model} Users
- * @typedef {import('sequelize').Model} Roles
- * @typedef {import('sequelize').Model} UserOtps
- * @typedef {import('sequelize').Model} UserConfig
- * @typedef {import('sequelize').Model} Activities
- * @typedef {import('sequelize').Model} ActivityHistory
- * @typedef {import('sequelize').Model} ActivityTemplates
- * @typedef {import('sequelize').Model} Permissions
- * @typedef {import('sequelize').Model} UserAssociations
- * @typedef {import('./rolePermission.model').Model} RolePermissions
-*/
-
 
 /**
  * @typedef {Object} DBModels
  * @property {Sequelize.Sequelize} sequelize - Sequelize instance
  * @property {typeof Sequelize} Sequelize - Sequelize library
- * @property {Targets} Targets - Targets model
- * @property {UserProgress} UserProgress - UserProgress model
- * @property {Users} Users - Users model
- * @property {Roles} Roles - Roles model
- * @property {UserOtps} UserOtps - UserOTPs model
- * @property {UserConfig} UserConfig - UserConfig model
- * @property {Activities} Activities - Activities model
- * @property {ActivityHistory} ActivityHistory - ActivityHistory model
- * @property {ActivityTemplates} ActivityTemplates - ActivityTemplates model
- * @property {Permissions} Permissions - Permissions model
- * @property {RolePermissions} RolePermissions - RolePermissions model
- * @property {UserAssociations} UserAssociations - UserAssociations model
- * @property {UserAssociations} UserAssociations - UserAssociations model
+ * @property {import('./target.model').Model} Targets - Targets model
+ * @property {import('./userProgress.model').Model} UserProgress - UserProgress model
+ * @property {import('./user.model').Model} Users - Users model
+ * @property {import('./role.model').Model} Roles - Roles model
+ * @property {import('./userotp.model').Model} UserOtps - UserOTPs model
+ * @property {import('./userConfig.model').Model} UserConfig - UserConfig model
+ * @property {import('./activity.model').Model} Activities - Activities model
+ * @property {import('./activityHistory.model').Model} ActivityHistory - ActivityHistory model
+ * @property {import('./activityTemplate.model').Model} ActivityTemplates - ActivityTemplates model
+ * @property {import('./permission.model').Model} Permissions - Permissions model
+ * @property {import('./rolePermission.model').Model} RolePermissions - RolePermissions model
+ * @property {import('./userAssociation.model').Model} UserAssociations - UserAssociations model
  * @property {import('./invite.model').Model} Invites - Invites model
+ * @property {import('./plan.model').Model} Plans - Plans model
+ * @property {import('./subscription.model').Model} Subscriptions - Subscriptions model
  */
 
 /** @type {DBModels} */

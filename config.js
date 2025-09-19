@@ -16,6 +16,8 @@ module.exports = {
 	APP_NAME: "Level Hub",
 	MAX_CHILD_LIMIT: 10,
 	SITE_URL: process.env.SITE_URL,
+	STRIPE_SK: process.env.STRIPE_SK,
+	CURRENCY: 'usd',
 	/* SMTP: {
 		host: 'mail.lovestoriez.com',
 		port: 465,

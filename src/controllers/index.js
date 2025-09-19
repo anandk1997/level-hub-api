@@ -8,6 +8,7 @@ const userCtrl = require('./userController');
 const childCtrl = require('./childController');
 const inviteCtrl = require('./inviteController');
 const coachCtrl = require('./coachController');
+const planCtrl = require('./planController');
 
 module.exports = {
   authCtrl,
@@ -20,4 +21,5 @@ module.exports = {
   childCtrl,
   inviteCtrl,
   coachCtrl,
+  planCtrl,
 };

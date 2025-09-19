@@ -2,7 +2,7 @@
 
 const dayjs = require('dayjs');
 const { COMMON_ERR_MSG } = require('../../config.js');
-const logger = require('./logger.js');
+const logger = require('./logger');
 
 class ErrorHandler extends Error {
 	

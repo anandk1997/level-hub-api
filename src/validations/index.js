@@ -6,6 +6,7 @@ const reportsValidation = require('./reportsValidation');
 const templateValidation = require('./activityTemplateValidation');
 const userValidation = require('./userValidation');
 const inviteValidation = require('./inviteValidation');
+const planValidation = require('./planValidation');
 
 module.exports = {
   authValidation,
@@ -16,4 +17,5 @@ module.exports = {
   templateValidation,
   userValidation,
   inviteValidation,
+  planValidation,
 };

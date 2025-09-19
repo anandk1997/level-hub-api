@@ -28,6 +28,42 @@ const calculateRemainingXP = (targetXP, currentXP) => {
 };
 
 /**
+ * Calculate annual percent discount
+ *
+ * @param {number} monthlyPrice
+ * @param {number} yearlyPrice
+ * @returns {number}
+ */
+const calculatePercentDiscount = (monthlyPrice, yearlyPrice) => {
+  if (!monthlyPrice || !yearlyPrice) { return 0 }
+  const potentialAnnualCost = monthlyPrice * 12;
+
+  return roundOffNumber((((potentialAnnualCost - yearlyPrice) / potentialAnnualCost) * 100));
+};
+
+/**
+ * Calculate price in cents for Stripe
+ *
+ * @param {number} price
+ * @returns {number}
+ */
+const calculateCentPrice = (price) => {
+  if (!price) { return 0 }
+  return price * 100;
+};
+
+/**
+ * Calculate price in dollar from cents
+ *
+ * @param {number} amount
+ * @returns {number}
+ */
+const calculateDollarPrice = (amount) => {
+  if (!amount || typeof amount !== 'number') { return 0.00 }
+  return parseFloat((amount / 100).toFixed(2));
+};
+
+/**
  * Calculate the distance between two coordinates
  * 
  * @param {Object} coord1
@@ -66,4 +102,7 @@ module.exports = {
   generateOtp,
   calculateLevel,
   calculateRemainingXP,
+  calculatePercentDiscount,
+  calculateCentPrice,
+  calculateDollarPrice,
 };

@@ -7,7 +7,7 @@ const cors = require("cors");
 const { PORT } = require("./config.js");
 const corsOptions = require('./src/corsConfig.js');
 const { ErrorHandler, handleError, responseHandler } = require('./src/helpers');
-const { userUnrestricted, userRestricted } = require('./src/routes');
+const { userUnrestricted, userRestricted, adminRestricted } = require('./src/routes');
 
 const app = express();
 app.use(helmet());
@@ -20,6 +20,7 @@ app.use(cors(corsOptions));
 // Apply the response handler middleware to all routes
 app.use(responseHandler);
 
+app.use('/admin', adminRestricted); // Admin routing file
 app.use('/', userUnrestricted); // Unrestricted routing file
 app.use('/', userRestricted); // Restricted routing file
 

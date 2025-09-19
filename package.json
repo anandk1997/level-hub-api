@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "NodeJS Express API for level hub",
   "main": "index.js",
   "type": "commonjs",
@@ -27,21 +27,22 @@
     "@joi/date": "^2.1.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "dayjs": "^1.11.13",
-    "dotenv": "^17.2.1",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
-    "joi": "^18.0.0",
+    "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^7.0.6",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "redis": "^4.7.0",
     "sequelize": "^6.37.7",
+    "stripe": "^18.5.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "env-cmd": "^10.1.0",
+    "env-cmd": "^11.0.0",
     "nodemon": "^3.1.10",
     "sequelize-cli": "^6.6.3"
   }
